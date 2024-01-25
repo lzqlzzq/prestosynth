@@ -4,3 +4,6 @@
 [submodule "3rdparty/MPMCQueue"]
 	path = 3rdparty/MPMCQueue
 	url = https://github.com/rigtorp/MPMCQueue.git
+[submodule "3rdparty/libsamplerate"]
+	path = 3rdparty/libsamplerate
+	url = https://github.com/libsndfile/libsamplerate.git
