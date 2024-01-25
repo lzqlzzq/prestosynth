@@ -1,2 +1,2 @@
 # prestosynth
-prestosynth is a software synthesizer based on SoundFont, in presto
+prestosynth is a software synthesizer with SoundFont, in **presto** speed.
