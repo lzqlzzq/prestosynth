@@ -268,7 +268,7 @@ class SdtaChunk : public SoundFontChunk {
 class PdtaChunk : public SoundFontChunk {
 private:
 #define SF_CHUNK_TYPE(name)                              \
-    uint8_t* name##Handler = nullptr;                            \
+    name##Data* name##Handler = nullptr;                            \
     size_t name##Num = 0;
 PDTA_SUB_CHUNK_TYPES
 #undef SF_CHUNK_TYPE
