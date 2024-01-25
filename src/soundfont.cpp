@@ -1,5 +1,7 @@
+#include "samplerate.h"
 #include "soundfont.h"
 #include "byte_util.h"
+
 #include <iostream>
 
 namespace prestosynth {
@@ -40,6 +42,7 @@ void SoundFont::read_sdta_chunk(size_t offset, size_t chunkSize) {
             smplSize = read_le_bytes<uint32_t>(cursor(offset + 4));
             break;
         }
+        // TODO: sm24
 
         offset + chunkSize + 8;
     }
@@ -129,6 +132,39 @@ SoundFont::~SoundFont() {
 uint16_t SoundFont::get_version() const {
     return version;
 };
+
+AudioData SoundFont::get_sample(const shdrData &sampleInfo, uint32_t targetSampleRate, uint8_t quality) {
+    AudioData sampleData;
+
+    if(version == 2) {
+        sampleData.resize(sampleInfo.len());
+
+        // TODO: sm24
+        src_short_to_float_array(
+            reinterpret_cast<const short*>(smplHandler + sampleInfo.startOffset),
+            sampleData.data(),
+            sampleInfo.len());
+    }
+    else {
+        ;
+    }
+
+    if(targetSampleRate == sampleInfo.sampleRate)
+        return sampleData;
+    
+    SRC_DATA srcInfo;
+    srcInfo.src_ratio = static_cast<double>(targetSampleRate) / static_cast<double>(sampleInfo.sampleRate);
+    srcInfo.input_frames = sampleData.size();
+    srcInfo.output_frames = sampleData.size() * (srcInfo.src_ratio * 1.1);
+    AudioData resampledData(srcInfo.output_frames);
+    srcInfo.data_in = sampleData.data();
+    srcInfo.data_out = resampledData.data();
+
+    src_simple(&srcInfo, 4 - quality, 1);
+    resampledData.resize(srcInfo.output_frames_gen);
+
+    return resampledData;
+}
 
 #define SF_CHUNK_TYPE(name)                                                               \
 name##Data SoundFont::name(size_t index) const {                                          \

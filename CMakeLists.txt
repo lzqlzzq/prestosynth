@@ -26,6 +26,6 @@ if(BUILD_EXAMPLES)
 	add_executable(readsfinfo ${CMAKE_CURRENT_SOURCE_DIR}/example/readsfinfo.cpp)
 	target_link_libraries(readsfinfo PRIVATE prestosynth)
 
-	# add_executable(fetchsample ${CMAKE_CURRENT_SOURCE_DIR}/example/fetchsample.cpp)
-	# target_link_libraries(fetchsample PRIVATE prestosynth)
+	add_executable(fetchsample ${CMAKE_CURRENT_SOURCE_DIR}/example/fetchsample.cpp)
+	target_link_libraries(fetchsample PRIVATE prestosynth)
 endif()
