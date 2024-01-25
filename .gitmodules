@@ -1,0 +1,6 @@
+[submodule "3rdparty/mio"]
+	path = 3rdparty/mio
+	url = https://github.com/vimpunk/mio.git
+[submodule "3rdparty/MPMCQueue"]
+	path = 3rdparty/MPMCQueue
+	url = https://github.com/rigtorp/MPMCQueue.git
