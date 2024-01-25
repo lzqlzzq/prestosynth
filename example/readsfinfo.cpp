@@ -13,8 +13,8 @@ int main(int argc, char const *argv[])
     std::cout << sf.inst(11).name << std::endl;
     std::cout << sf.shdr(0).name << std::endl;
     std::cout << sf.shdr(0).sampleRate << std::endl;
-    std::cout << sf.shdr(0).start << std::endl;
-    std::cout << sf.shdr(0).end << std::endl;
+    std::cout << sf.shdr(0).startOffset << std::endl;
+    std::cout << sf.shdr(0).endOffset << std::endl;
     std::cout << sf.shdr(0).startLoop << std::endl;
     std::cout << sf.shdr(0).endLoop << std::endl;
 
