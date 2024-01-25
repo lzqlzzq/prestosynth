@@ -26,11 +26,12 @@ PdtaChunk::PdtaChunk(uint8_t* handler, size_t size): SoundFontChunk(handler, siz
         if(read_string_bytes(cursor(offset), 4) == name##_CHUNKID) {                       \
             if(chunkSize % sizeof(name##Data))                                             \
                 throw std::ios_base::failure("Not valid " + name##_CHUNKID + " chunk!");   \
-            name##Handler = handler + offset + 8;                                                     \
+            name##Handler = reinterpret_cast<name##Data*>(handler + offset + 8);           \
             name##Num = read_le_bytes(cursor(offset + 4), 4) / sizeof(name##Data);         \
         }
         PDTA_SUB_CHUNK_TYPES
         #undef SF_CHUNK_TYPE
+
         offset += chunkSize + 8;
     }
 };
@@ -39,7 +40,7 @@ PdtaChunk::PdtaChunk(uint8_t* handler, size_t size): SoundFontChunk(handler, siz
 name##Data PdtaChunk::name(size_t index) const {                                          \
     if(index > name##Num)                                                                 \
         std::out_of_range("Index is out of range!");                                      \
-    return *(reinterpret_cast<name##Data*>(name##Handler) + index);              \
+    return *(name##Handler + index);                                                      \
 };                                                                                        \
                                                                                           \
 size_t PdtaChunk::name##_num() const {                                                    \
@@ -87,15 +88,21 @@ SoundFont::SoundFont(const std::string &filepath) {
     size_t offset = 12;
 
     while(!(version &&
-        sdtaChunk.cursor(0) &&
-        pdtaChunk.cursor(0))) {
+        sdtaChunk.handler &&
+        pdtaChunk.handler)) {
+        if(read_string_bytes(cursor(offset), 4) != LIST_CHUNKID)
+            throw std::ios_base::failure("LIST chunk excepted!");
+
         size_t chunkSize = read_le_bytes(cursor(offset + 4), 4);
 
         if(offset + chunkSize > fileSize)
             throw std::ios_base::failure("Unexcepted EOF!");
 
-        if(read_string_bytes(cursor(offset + 8), 4) == INFO_CHUNKID)
+        if(read_string_bytes(cursor(offset + 8), 4) == INFO_CHUNKID) {
             version = read_version(offset + 12, chunkSize);
+            if(version != 2 && version != 3)
+                throw std::ios_base::failure("Only sf2 or sf3 supported!");
+        }
         if(read_string_bytes(cursor(offset + 8), 4) == sdta_CHUNKID)
             sdtaChunk = SdtaChunk(cursor(offset + 12), chunkSize);
         if(read_string_bytes(cursor(offset + 8), 4) == pdta_CHUNKID)
