@@ -8,6 +8,7 @@
 #include <exception>
 #include <ios>
 #include <mio/mmap.hpp>
+#include "audiodata.h"
 
 
 namespace prestosynth {
@@ -218,8 +219,8 @@ enum SampleType : uint16_t {
 
 struct SampleHeader {
     char name[20];
-    uint32_t start;
-    uint32_t end;
+    uint32_t startOffset;
+    uint32_t endOffset;
     uint32_t startLoop;
     uint32_t endLoop;
     uint32_t sampleRate;
@@ -227,6 +228,8 @@ struct SampleHeader {
     int8_t pitchCorrection;
     uint16_t sampleLink;
     SampleType sampleType;
+
+    inline size_t len() const { return endOffset - startOffset; };
 };  // shdr
 static_assert(sizeof(SampleHeader) == 46);
 typedef SampleHeader shdrData;
@@ -256,7 +259,9 @@ public:
     ~SoundFont();
 
     uint16_t get_version() const;
-    
+    AudioData get_sample(const shdrData &sampleInfo,
+        uint32_t targetSampleRate,
+        uint8_t quality);  // 0-4
 
 #define SF_CHUNK_TYPE(name)                             \
     name##Data name(size_t index) const;                \
