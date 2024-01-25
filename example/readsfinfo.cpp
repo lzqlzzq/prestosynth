@@ -7,11 +7,16 @@
 
 int main(int argc, char const *argv[])
 {
-    prestosynth::soundfont_internal::SoundFont sf(std::string("../example/MuseScore_General.sf3"));
+    prestosynth::soundfont_internal::SoundFont sf(std::string("../example/MuseScore_General.sf2"));
     std::cout << sf.get_version() << std::endl;
-    std::cout << sf.pdta().inst_num() << std::endl;
-    std::cout << sf.pdta().inst(11).name << std::endl;
-    std::cout << sf.pdta().phdr(0).name << std::endl;
+    std::cout << sf.inst_num() << std::endl;
+    std::cout << sf.inst(11).name << std::endl;
+    std::cout << sf.shdr(0).name << std::endl;
+    std::cout << sf.shdr(0).sampleRate << std::endl;
+    std::cout << sf.shdr(0).start << std::endl;
+    std::cout << sf.shdr(0).end << std::endl;
+    std::cout << sf.shdr(0).startLoop << std::endl;
+    std::cout << sf.shdr(0).endLoop << std::endl;
 
     return 0;
 };
