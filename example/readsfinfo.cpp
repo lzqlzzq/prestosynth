@@ -8,7 +8,7 @@
 int main(int argc, char const *argv[])
 {
     prestosynth::soundfont_internal::SoundFont sf(std::string("../example/MuseScore_General.sf2"));
-    std::cout << sf.get_version() << std::endl;
+    std::cout << sf.version() << std::endl;
     std::cout << sf.inst_num() << std::endl;
     std::cout << sf.inst(11).name << std::endl;
     std::cout << sf.shdr(0).name << std::endl;
