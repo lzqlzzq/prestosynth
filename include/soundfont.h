@@ -8,7 +8,6 @@
 #include <exception>
 #include <ios>
 #include <mio/mmap.hpp>
-#include "math_util.h"
 
 
 namespace prestosynth {
@@ -46,21 +45,6 @@ SF_DATA_CHUNK_TYPES
 SF_CHUNK_TYPES
 PDTA_SUB_CHUNK_TYPES
 #undef SF_CHUNK_TYPE
-
-inline size_t read_le_bytes(uint8_t* cursor, size_t length) {
-    size_t num = 0;
-
-    for(size_t i = 0; i < length; i++) {
-        num += (*(cursor + i)) << (8 * i);
-    }
-
-    return num;
-};
-
-inline std::string read_string_bytes(uint8_t* cursor, size_t length) {
-    return std::string(reinterpret_cast<const char*>(cursor), length);
-};
-
 
 namespace soundfont_internal {
 
@@ -236,8 +220,8 @@ struct SampleHeader {
     char name[20];
     uint32_t start;
     uint32_t end;
-    uint32_t startloop;
-    uint32_t endloop;
+    uint32_t startLoop;
+    uint32_t endLoop;
     uint32_t sampleRate;
     uint8_t originalPitch;
     int8_t pitchCorrection;
@@ -247,60 +231,38 @@ struct SampleHeader {
 static_assert(sizeof(SampleHeader) == 46);
 typedef SampleHeader shdrData;
 
-class SoundFontChunk {
-protected:
-    uint8_t* handler = nullptr;
-    size_t size = 0;
-    uint8_t* cursor(size_t offset);
-
-public:
-    friend class SoundFont;
-
-    SoundFontChunk() = default;
-    SoundFontChunk(uint8_t* handler, size_t size):
-        handler(handler), size(size) {};
-};
-
-class SdtaChunk : public SoundFontChunk {
-    using SoundFontChunk::SoundFontChunk;
-};
-
-class PdtaChunk : public SoundFontChunk {
-private:
-#define SF_CHUNK_TYPE(name)                              \
-    name##Data* name##Handler = nullptr;                            \
-    size_t name##Num = 0;
-PDTA_SUB_CHUNK_TYPES
-#undef SF_CHUNK_TYPE
-
-public:
-    using SoundFontChunk::SoundFontChunk;
-    PdtaChunk(uint8_t* handler, size_t size);
-
-#define SF_CHUNK_TYPE(name)                             \
-    name##Data name(size_t index) const;                \
-    size_t name##_num() const;
-PDTA_SUB_CHUNK_TYPES
-#undef SF_CHUNK_TYPE
-};
 
 class SoundFont {
 protected:
     mio::basic_mmap_source<uint8_t> handler;
     uint16_t version = 0;
-    SdtaChunk sdtaChunk;
-    PdtaChunk pdtaChunk;
+
+    uint8_t* smplHandler = nullptr;
+    size_t smplSize = 0;
+
+#define SF_CHUNK_TYPE(name)                              \
+    name##Data* name##Handler = nullptr;                 \
+    size_t name##Num = 0;
+PDTA_SUB_CHUNK_TYPES
+#undef SF_CHUNK_TYPE
 
     uint8_t* cursor(size_t offset);
-    uint16_t read_version(size_t offset, size_t maxSize);
+    void read_INFO_chunk(size_t offset, size_t chunkSize);
+    void read_sdta_chunk(size_t offset, size_t chunkSize);
+    void read_pdta_chunk(size_t offset, size_t chunkSize);
 
 public:
     SoundFont(const std::string &filepath);
     ~SoundFont();
 
     uint16_t get_version() const;
-    SdtaChunk sdta() const;
-    PdtaChunk pdta() const;
+    
+
+#define SF_CHUNK_TYPE(name)                             \
+    name##Data name(size_t index) const;                \
+    size_t name##_num() const;
+PDTA_SUB_CHUNK_TYPES
+#undef SF_CHUNK_TYPE
 };
 
 }
