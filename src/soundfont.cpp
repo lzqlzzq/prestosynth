@@ -10,7 +10,7 @@ uint8_t* SoundFontChunk::cursor(size_t offset) {
     return handler + offset;
 }
 
-PdtaChunk::PdtaChunk(uint8_t* ptr, size_t size): SoundFontChunk(ptr, size) {
+PdtaChunk::PdtaChunk(uint8_t* handler, size_t size): SoundFontChunk(handler, size) {
     size_t offset = 0;
     while(!(
             #define SF_CHUNK_TYPE(name) name##Num &&
@@ -26,7 +26,7 @@ PdtaChunk::PdtaChunk(uint8_t* ptr, size_t size): SoundFontChunk(ptr, size) {
         if(read_string_bytes(cursor(offset), 4) == name##_CHUNKID) {                       \
             if(chunkSize % sizeof(name##Data))                                             \
                 throw std::ios_base::failure("Not valid " + name##_CHUNKID + " chunk!");   \
-            name##Offset = offset + 8;                                                     \
+            name##Handler = handler + offset + 8;                                                     \
             name##Num = read_le_bytes(cursor(offset + 4), 4) / sizeof(name##Data);         \
         }
         PDTA_SUB_CHUNK_TYPES
@@ -35,12 +35,11 @@ PdtaChunk::PdtaChunk(uint8_t* ptr, size_t size): SoundFontChunk(ptr, size) {
     }
 };
 
-
 #define SF_CHUNK_TYPE(name)                                                               \
 name##Data PdtaChunk::name(size_t index) const {                                          \
     if(index > name##Num)                                                                 \
         std::out_of_range("Index is out of range!");                                      \
-    return *(reinterpret_cast<name##Data*>(handler + name##Offset) + index);              \
+    return *(reinterpret_cast<name##Data*>(name##Handler) + index);              \
 };                                                                                        \
                                                                                           \
 size_t PdtaChunk::name##_num() const {                                                    \
