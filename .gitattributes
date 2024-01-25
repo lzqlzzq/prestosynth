@@ -1,3 +1,2 @@
-*.sf filter=lfs diff=lfs merge=lfs -text
-*.sf3 filter=lfs diff=lfs merge=lfs -text
 example/MuseScore_General.sf3 filter=lfs diff=lfs merge=lfs -text
+example/MuseScore_General.sf2 filter=lfs diff=lfs merge=lfs -text
