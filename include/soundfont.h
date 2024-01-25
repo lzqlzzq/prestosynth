@@ -233,7 +233,7 @@ enum SampleType : uint16_t {
 };
 
 struct SampleHeader {
-    char sampleName[20];
+    char name[20];
     uint32_t start;
     uint32_t end;
     uint32_t startloop;
@@ -268,14 +268,14 @@ class SdtaChunk : public SoundFontChunk {
 class PdtaChunk : public SoundFontChunk {
 private:
 #define SF_CHUNK_TYPE(name)                              \
-    size_t name##Offset = -1;                            \
+    uint8_t* name##Handler = nullptr;                            \
     size_t name##Num = 0;
 PDTA_SUB_CHUNK_TYPES
 #undef SF_CHUNK_TYPE
 
 public:
     using SoundFontChunk::SoundFontChunk;
-    PdtaChunk(uint8_t* cursor, size_t size);
+    PdtaChunk(uint8_t* handler, size_t size);
 
 #define SF_CHUNK_TYPE(name)                             \
     name##Data name(size_t index) const;                \
