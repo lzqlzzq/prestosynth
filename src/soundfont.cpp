@@ -1,6 +1,7 @@
 #include "samplerate.h"
 #include "soundfont.h"
 #include "byte_util.h"
+#include "stb_vorbis.c"
 
 #include <iostream>
 
@@ -14,19 +15,19 @@ uint8_t* SoundFont::cursor(size_t offset) {
 
 void SoundFont::read_INFO_chunk(size_t offset, size_t chunkSize) {
     size_t endOffset = offset + chunkSize;
-    while(!version) {
+    while(!_version) {
         size_t chunkSize = read_le_bytes<uint32_t>(cursor(offset + 4));
         if(offset + chunkSize > endOffset)
             throw std::ios_base::failure("Unexcepted EOF in INFO chunk!");
 
         if(read_string_bytes(cursor(offset), 4) == ifil_CHUNKID) {
-            version = read_le_bytes<uint32_t>(cursor(offset + 8));
+            _version = read_le_bytes<uint32_t>(cursor(offset + 8));
             break;
         }
 
         offset + chunkSize + 8;
     }
-    if(version != 2 && version != 3)
+    if(_version != 2 && _version != 3)
         throw std::ios_base::failure("Only sf2 or sf3 supported!");
 };
 
@@ -38,7 +39,7 @@ void SoundFont::read_sdta_chunk(size_t offset, size_t chunkSize) {
             throw std::ios_base::failure("Unexcepted EOF in sdta chunk!");
 
         if(read_string_bytes(cursor(offset), 4) == smpl_CHUNKID) {
-            smplHandler = cursor(offset + 4);
+            smplHandler = cursor(offset + 8);
             smplSize = read_le_bytes<uint32_t>(cursor(offset + 4));
             break;
         }
@@ -129,14 +130,14 @@ SoundFont::~SoundFont() {
     handler.unmap();
 };
 
-uint16_t SoundFont::get_version() const {
-    return version;
+uint16_t SoundFont::version() const {
+    return _version;
 };
 
-AudioData SoundFont::get_sample(const shdrData &sampleInfo, uint32_t targetSampleRate, uint8_t quality) {
+AudioData SoundFont::sample(const shdrData &sampleInfo, uint32_t targetSampleRate, uint8_t quality) {
     AudioData sampleData;
 
-    if(version == 2) {
+    if(_version == 2) {
         sampleData.resize(sampleInfo.len());
 
         // TODO: sm24
@@ -146,12 +147,26 @@ AudioData SoundFont::get_sample(const shdrData &sampleInfo, uint32_t targetSampl
             sampleInfo.len());
     }
     else {
-        ;
+        int chan, samplerate;
+        short *output;
+
+        size_t sampleNum = stb_vorbis_decode_memory(
+            smplHandler + sampleInfo.startOffset,
+            sampleInfo.len(), &chan, &samplerate, &output);
+
+        if(sampleNum == -1)
+            throw std::ios_base::failure("Cannot decode sample!");
+
+        sampleData.resize(sampleNum);
+        src_short_to_float_array(
+            output,
+            sampleData.data(),
+            sampleNum);
     }
 
     if(targetSampleRate == sampleInfo.sampleRate)
         return sampleData;
-    
+
     SRC_DATA srcInfo;
     srcInfo.src_ratio = static_cast<double>(targetSampleRate) / static_cast<double>(sampleInfo.sampleRate);
     srcInfo.input_frames = sampleData.size();

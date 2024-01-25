@@ -238,7 +238,7 @@ typedef SampleHeader shdrData;
 class SoundFont {
 protected:
     mio::basic_mmap_source<uint8_t> handler;
-    uint16_t version = 0;
+    uint16_t _version = 0;
 
     uint8_t* smplHandler = nullptr;
     size_t smplSize = 0;
@@ -258,8 +258,8 @@ public:
     SoundFont(const std::string &filepath);
     ~SoundFont();
 
-    uint16_t get_version() const;
-    AudioData get_sample(const shdrData &sampleInfo,
+    uint16_t version() const;
+    AudioData sample(const shdrData &sampleInfo,
         uint32_t targetSampleRate,
         uint8_t quality);  // 0-4
 
