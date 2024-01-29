@@ -7,7 +7,7 @@
 
 namespace prestosynth {
 
-namespace soundfont_internal {
+namespace sf_internal {
 
 uint8_t* SoundFont::cursor(size_t offset) {
     return const_cast<uint8_t*>(handler.begin()) + offset;
@@ -170,13 +170,12 @@ AudioData SoundFont::sample(const shdrData &sampleInfo, uint32_t targetSampleRat
     SRC_DATA srcInfo;
     srcInfo.src_ratio = static_cast<double>(targetSampleRate) / static_cast<double>(sampleInfo.sampleRate);
     srcInfo.input_frames = sampleData.size();
-    srcInfo.output_frames = sampleData.size() * (srcInfo.src_ratio * 1.1);
+    srcInfo.output_frames = sampleData.size() * srcInfo.src_ratio;
     AudioData resampledData(srcInfo.output_frames);
     srcInfo.data_in = sampleData.data();
     srcInfo.data_out = resampledData.data();
 
     src_simple(&srcInfo, 4 - quality, 1);
-    resampledData.resize(srcInfo.output_frames_gen);
 
     return resampledData;
 }
@@ -195,5 +194,81 @@ PDTA_SUB_CHUNK_TYPES
 #undef SF_CHUNK_TYPE
 
 }
+
+inline void PrestoSoundFont::handle_gen(SampleInfo &sInfo, const sf_internal::Generator &gen) {
+    std::cout << gen.genOper << std::endl;
+    std::cout << gen.sAmount << std::endl;
+};
+
+inline void PrestoSoundFont::handle_smpl(SampleInfo &pGlobalInfo, const PresetHead pHead, uint16_t smplIdx) {
+    std::cout << sf.shdr(smplIdx).name << std::endl;
+}
+
+inline void PrestoSoundFont::handle_inst(SampleInfo &pGlobalInfo, const PresetHead pHead, uint16_t instIdx) {
+    SampleInfo iGlobalInfo = pGlobalInfo;
+
+    const auto &thisInst = sf.inst(instIdx);
+    const auto &nextInst = sf.inst(instIdx + 1);
+    std::cout << thisInst.name << std::endl;
+    for(uint32_t iBagIdx = thisInst.bagIdx; iBagIdx < nextInst.bagIdx; iBagIdx++) {
+        SampleInfo iZoneInfo = iGlobalInfo;
+        bool iGlobal = true;
+
+        for(uint16_t genIdx = sf.ibag(iBagIdx).genIdx; genIdx < sf.ibag(iBagIdx + 1).genIdx; genIdx++) {
+            const auto &iGen = sf.igen(genIdx);
+            handle_gen(iZoneInfo, iGen);
+
+            if(iGen.genOper == sf_internal::GeneratorType::SampleID) {
+                iGlobal = false;
+                handle_smpl(iZoneInfo, pHead, iGen.uAmount);
+
+                break;
+            }
+        }
+
+        if(iBagIdx == thisInst.bagIdx &&
+            iGlobal) {
+            iGlobalInfo = iZoneInfo;
+        }
+    }
+};
+
+inline void PrestoSoundFont::handle_phdr() {
+    // for(auto pIdx = 0; pIdx < sf.phdr_num() - 1; ++pIdx) {
+    for(auto pIdx = 0; pIdx < 1; ++pIdx) {
+        const auto &thisPreset = sf.phdr(pIdx);
+        const auto &nextPreset = sf.phdr(pIdx + 1);
+        PresetHead pHead = static_cast<uint16_t>((thisPreset.bankNum << 8) | thisPreset.presetNum);
+        presetIdx.insert({{ pHead }, SampleInfos()});
+
+        SampleInfo pGlobalInfo;
+        bool pGlobal = true;
+        for(uint32_t pBagIdx = thisPreset.bagIdx; pBagIdx < nextPreset.bagIdx; ++pBagIdx) {
+            SampleInfo pZoneInfo = pGlobalInfo;
+
+            for(uint16_t genIdx = sf.pbag(pBagIdx).genIdx; genIdx < sf.pbag(pBagIdx + 1).genIdx; genIdx++) {
+                const auto &pGen = sf.pgen(genIdx);
+                handle_gen(pZoneInfo, pGen);
+
+                if(pGen.genOper == sf_internal::GeneratorType::Instrument) {
+                    pGlobal = false;
+                    handle_inst(pZoneInfo, pHead, pGen.uAmount);
+
+                    break;
+                }
+            }
+
+            if(pBagIdx == thisPreset.bagIdx &&
+                pGlobal) {
+                pGlobalInfo = pZoneInfo;
+            }
+        }
+    };
+};
+
+PrestoSoundFont::PrestoSoundFont(const std::string &filepath, uint32_t sampleRate):
+    sf(sf_internal::SoundFont(filepath)), sampleRate(sampleRate) {
+    handle_phdr();
+};
 
 }
