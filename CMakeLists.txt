@@ -28,4 +28,7 @@ if(BUILD_EXAMPLES)
 
 	add_executable(fetchsample ${CMAKE_CURRENT_SOURCE_DIR}/example/fetchsample.cpp)
 	target_link_libraries(fetchsample PRIVATE prestosynth)
+
+	add_executable(buildsfidx ${CMAKE_CURRENT_SOURCE_DIR}/example/buildsfidx.cpp)
+	target_link_libraries(buildsfidx PRIVATE prestosynth)
 endif()
