@@ -2,6 +2,9 @@
 #define _SOUNDFONT_H
 
 #include <system_error>
+#include <map>
+#include <vector>
+#include <utility>
 #include <string>
 #include <cstddef>
 #include <cstdint>
@@ -47,7 +50,7 @@ SF_CHUNK_TYPES
 PDTA_SUB_CHUNK_TYPES
 #undef SF_CHUNK_TYPE
 
-namespace soundfont_internal {
+namespace sf_internal {
 
 #define PERCUSSION_BANK 128
 
@@ -255,8 +258,11 @@ PDTA_SUB_CHUNK_TYPES
     void read_pdta_chunk(size_t offset, size_t chunkSize);
 
 public:
+    SoundFont() = default;
     SoundFont(const std::string &filepath);
     ~SoundFont();
+
+    SoundFont& operator=(const SoundFont& other);
 
     uint16_t version() const;
     AudioData sample(const shdrData &sampleInfo,
@@ -271,6 +277,66 @@ PDTA_SUB_CHUNK_TYPES
 };
 
 }
+
+union SampleHead {
+    struct {
+        uint8_t pitchLow = 0;
+        uint8_t velocityLow = 0;
+        uint8_t pitchHigh = 127;
+        uint8_t velocityHigh = 127;
+    };
+    struct {
+        uint16_t lowCode;
+        uint16_t highCode;
+    };
+    uint32_t code;
+};
+
+struct SampleAttribute {
+    uint8_t pitch = 0;
+    uint8_t loopMode = 0;
+
+    uint16_t sampleRate = 0;
+    uint32_t startOffset = 0;
+    uint32_t endOffset = 0;
+    uint32_t startLoop = 0;
+    uint32_t endLoop = 0;
+
+    float pan = 0;
+    float attenuation = 0;
+    float delayVol = 0;
+    float attackVol = 0;
+    float holdVol = 0;
+    float decayVol = 0;
+    float sustainVol = 0;
+    float releaseVol = 0;
+};
+
+struct SampleInfo {
+    SampleHead head;
+    SampleAttribute attr;
+};
+
+// (Bank, Preset)
+typedef uint16_t PresetHead;
+typedef std::vector<SampleInfo> SampleInfos;
+typedef std::map<PresetHead, SampleInfos> PresetIndex;
+
+class PrestoSoundFont {
+private:
+    sf_internal::SoundFont sf;
+    uint32_t sampleRate;
+    PresetIndex presetIdx;
+
+    void handle_gen(SampleInfo &sInfo, const sf_internal::Generator &gen);
+    void handle_smpl(SampleInfo &pGlobalInfo, const PresetHead pHead, uint16_t smplIdx);
+    void handle_inst(SampleInfo &pGlobalInfo, const PresetHead pHead, uint16_t instIdx);
+    void handle_phdr();
+
+public:
+    PrestoSoundFont(const std::string &filepath, uint32_t sampleRate);
+
+};
 
 }
 
