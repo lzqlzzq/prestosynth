@@ -1,6 +1,7 @@
 #include "samplerate.h"
 #include "soundfont.h"
 #include "byte_util.h"
+#include "math_util.h"
 #include "stb_vorbis.c"
 
 #include <iostream>
@@ -196,20 +197,71 @@ PDTA_SUB_CHUNK_TYPES
 }
 
 inline void PrestoSoundFont::handle_gen(SampleInfo &sInfo, const sf_internal::Generator &gen) {
-    std::cout << gen.genOper << std::endl;
-    std::cout << gen.sAmount << std::endl;
+    switch(gen.genOper) {
+        case sf_internal::GeneratorType::KeyRange: {
+            sInfo.head.pitchLow = gen.lowByte;
+            sInfo.head.pitchHigh = gen.highByte;
+            break;
+        };
+        case sf_internal::GeneratorType::VelRange: {
+            sInfo.head.velLow = gen.lowByte;
+            sInfo.head.velHigh = gen.highByte;
+            break;
+        };
+        case sf_internal::GeneratorType::Pan: {
+            sInfo.attr.pan = static_cast<float>(gen.sAmount) / 500.;
+            break;
+        };
+        case sf_internal::GeneratorType::InitialAttenuation: {
+            sInfo.attr.attenuation = cb_to_amplitude(static_cast<float>(-gen.sAmount));
+            break;
+        };
+        case sf_internal::GeneratorType::DelayVolEnv: {
+            sInfo.attr.delayVol = timecents_to_ms(gen.sAmount);
+            break;
+        };
+        case sf_internal::GeneratorType::AttackVolEnv: {
+            sInfo.attr.attackVol = timecents_to_ms(gen.sAmount);
+            break;
+        };
+        case sf_internal::GeneratorType::HoldVolEnv: {
+            sInfo.attr.holdVol = timecents_to_ms(gen.sAmount);
+            break;
+        };
+        case sf_internal::GeneratorType::DecayVolEnv: {
+            sInfo.attr.decayVol = timecents_to_ms(gen.sAmount);
+            break;
+        };
+        case sf_internal::GeneratorType::SustainVolEnv: {
+            sInfo.attr.sustainVol = cb_to_amplitude(static_cast<float>(-gen.sAmount));
+            break;
+        };
+        case sf_internal::GeneratorType::ReleaseVolEnv: {
+            sInfo.attr.releaseVol = timecents_to_ms(gen.sAmount);
+            break;
+        };
+    }
 };
 
-inline void PrestoSoundFont::handle_smpl(SampleInfo &pGlobalInfo, const PresetHead pHead, uint16_t smplIdx) {
-    std::cout << sf.shdr(smplIdx).name << std::endl;
+inline void PrestoSoundFont::handle_smpl(SampleInfo instInfo, const PresetHead pHead, uint16_t smplIdx) {
+    SampleInfo sInfo = instInfo;
+    const auto &smplInfo = sf.shdr(smplIdx);
+
+    sInfo.attr.pitch = smplInfo.originalPitch;
+    sInfo.attr.sampleRate = smplInfo.sampleRate;
+    sInfo.attr.startOffset = smplInfo.startOffset;
+    sInfo.attr.endOffset = smplInfo.endOffset;
+    sInfo.attr.startLoop = smplInfo.startLoop;
+    sInfo.attr.endLoop = smplInfo.endLoop;
+
+    presetIdx[pHead].push_back(sInfo);
 }
 
-inline void PrestoSoundFont::handle_inst(SampleInfo &pGlobalInfo, const PresetHead pHead, uint16_t instIdx) {
-    SampleInfo iGlobalInfo = pGlobalInfo;
+inline void PrestoSoundFont::handle_inst(SampleInfo presetInfo, const PresetHead pHead, uint16_t instIdx) {
+    SampleInfo iGlobalInfo = presetInfo;
 
     const auto &thisInst = sf.inst(instIdx);
     const auto &nextInst = sf.inst(instIdx + 1);
-    std::cout << thisInst.name << std::endl;
     for(uint32_t iBagIdx = thisInst.bagIdx; iBagIdx < nextInst.bagIdx; iBagIdx++) {
         SampleInfo iZoneInfo = iGlobalInfo;
         bool iGlobal = true;
@@ -234,8 +286,7 @@ inline void PrestoSoundFont::handle_inst(SampleInfo &pGlobalInfo, const PresetHe
 };
 
 inline void PrestoSoundFont::handle_phdr() {
-    // for(auto pIdx = 0; pIdx < sf.phdr_num() - 1; ++pIdx) {
-    for(auto pIdx = 0; pIdx < 1; ++pIdx) {
+    for(auto pIdx = 0; pIdx < sf.phdr_num() - 1; ++pIdx) {
         const auto &thisPreset = sf.phdr(pIdx);
         const auto &nextPreset = sf.phdr(pIdx + 1);
         PresetHead pHead = static_cast<uint16_t>((thisPreset.bankNum << 8) | thisPreset.presetNum);
@@ -266,8 +317,8 @@ inline void PrestoSoundFont::handle_phdr() {
     };
 };
 
-PrestoSoundFont::PrestoSoundFont(const std::string &filepath, uint32_t sampleRate):
-    sf(sf_internal::SoundFont(filepath)), sampleRate(sampleRate) {
+PrestoSoundFont::PrestoSoundFont(const std::string &filepath, uint32_t sampleRate, bool stereo):
+    sf(sf_internal::SoundFont(filepath)), sampleRate(sampleRate), stereo(stereo) {
     handle_phdr();
 };
 

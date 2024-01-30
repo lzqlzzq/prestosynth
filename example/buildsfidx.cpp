@@ -9,7 +9,7 @@
 
 int main(int argc, char const *argv[])
 {
-    prestosynth::PrestoSoundFont sf(std::string("../example/MuseScore_General.sf3"), 44100);
+    prestosynth::PrestoSoundFont sf(std::string("../example/MuseScore_General.sf3"), 44100, true);
 
     return 0;
 };
