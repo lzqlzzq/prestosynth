@@ -281,9 +281,9 @@ PDTA_SUB_CHUNK_TYPES
 union SampleHead {
     struct {
         uint8_t pitchLow = 0;
-        uint8_t velocityLow = 0;
+        uint8_t velLow = 0;
         uint8_t pitchHigh = 127;
-        uint8_t velocityHigh = 127;
+        uint8_t velHigh = 127;
     };
     struct {
         uint16_t lowCode;
@@ -297,18 +297,18 @@ struct SampleAttribute {
     uint8_t loopMode = 0;
 
     uint16_t sampleRate = 0;
-    uint32_t startOffset = 0;
-    uint32_t endOffset = 0;
-    uint32_t startLoop = 0;
-    uint32_t endLoop = 0;
+    int32_t startOffset = 0;
+    int32_t endOffset = 0;
+    int32_t startLoop = 0;
+    int32_t endLoop = 0;
 
     float pan = 0;
-    float attenuation = 0;
+    float attenuation = 1.;
     float delayVol = 0;
     float attackVol = 0;
     float holdVol = 0;
     float decayVol = 0;
-    float sustainVol = 0;
+    float sustainVol = 1.;
     float releaseVol = 0;
 };
 
@@ -326,15 +326,16 @@ class PrestoSoundFont {
 private:
     sf_internal::SoundFont sf;
     uint32_t sampleRate;
+    bool stereo;
     PresetIndex presetIdx;
 
     void handle_gen(SampleInfo &sInfo, const sf_internal::Generator &gen);
-    void handle_smpl(SampleInfo &pGlobalInfo, const PresetHead pHead, uint16_t smplIdx);
-    void handle_inst(SampleInfo &pGlobalInfo, const PresetHead pHead, uint16_t instIdx);
+    void handle_smpl(SampleInfo instInfo, const PresetHead pHead, uint16_t smplIdx);
+    void handle_inst(SampleInfo presetInfo, const PresetHead pHead, uint16_t instIdx);
     void handle_phdr();
 
 public:
-    PrestoSoundFont(const std::string &filepath, uint32_t sampleRate);
+    PrestoSoundFont(const std::string &filepath, uint32_t sampleRate, bool stereo);
 
 };
 
