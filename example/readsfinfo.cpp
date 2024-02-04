@@ -22,7 +22,7 @@ int main(int argc, char const *argv[])
     for (int i = 11810; i < 11819; ++i)
     {
         std::cout << uint16_t(sf.igen(i).genOper) << std::endl;
-        std::cout << sf.igen(i).sAmount << std::endl;
+        std::cout << sf.igen(i).amount.sAmount << std::endl;
     }
 
     return 0;
