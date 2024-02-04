@@ -3,15 +3,18 @@
 
 #include <system_error>
 #include <map>
+#include <array>
 #include <vector>
 #include <utility>
 #include <string>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <mutex>
 #include <ios>
 #include <mio/mmap.hpp>
-#include "audiodata.h"
+#include "audio_util.h"
+#include "math_util.h"
 
 
 namespace prestosynth {
@@ -82,60 +85,106 @@ struct Instrument {
 static_assert(sizeof(Instrument) == 22);
 typedef Instrument instData;
 
+// (name, index, default)
+#define SF_GENERATOR_TYPES \
+    SF_GENERATOR_TYPE(StartAddrsOffset, 0, 0) \
+    SF_GENERATOR_TYPE(EndAddrsOffset, 1, 0) \
+    SF_GENERATOR_TYPE(StartloopAddrsOffset, 2, 0) \
+    SF_GENERATOR_TYPE(EndloopAddrsOffset, 3, 0) \
+    SF_GENERATOR_TYPE(StartAddrsCoarseOffset, 4, 0) \
+    SF_GENERATOR_TYPE(ModLfoToPitch, 5, 0) \
+    SF_GENERATOR_TYPE(VibLfoToPitch, 6, 0) \
+    SF_GENERATOR_TYPE(ModEnvToPitch, 7, 0) \
+    SF_GENERATOR_TYPE(InitialFilterFc, 8, 13500) \
+    SF_GENERATOR_TYPE(InitialFilterQ, 9, 0) \
+    SF_GENERATOR_TYPE(ModLfoToFilterFc, 10, 0) \
+    SF_GENERATOR_TYPE(ModEnvToFilterFc, 11, 0) \
+    SF_GENERATOR_TYPE(EndAddrsCoarseOffset, 12, 0) \
+    SF_GENERATOR_TYPE(ModLfoToVolume, 13, 0) \
+    SF_GENERATOR_TYPE(unused1, 14, 0) \
+    SF_GENERATOR_TYPE(ChorusEffectsSend, 15, 0) \
+    SF_GENERATOR_TYPE(ReverbEffectsSend, 16, 0) \
+    SF_GENERATOR_TYPE(Pan, 17, 0) \
+    SF_GENERATOR_TYPE(unused2, 18, 0) \
+    SF_GENERATOR_TYPE(unused3, 19, 0) \
+    SF_GENERATOR_TYPE(unused4, 20, 0) \
+    SF_GENERATOR_TYPE(DelayModLFO, 21, -12000) \
+    SF_GENERATOR_TYPE(FreqModLFO, 22, 0) \
+    SF_GENERATOR_TYPE(DelayVibLFO, 23, -12000) \
+    SF_GENERATOR_TYPE(FreqVibLFO, 24, 0) \
+    SF_GENERATOR_TYPE(DelayModEnv, 25, -12000) \
+    SF_GENERATOR_TYPE(AttackModEnv, 26, -12000) \
+    SF_GENERATOR_TYPE(HoldModEnv, 27, -12000) \
+    SF_GENERATOR_TYPE(DecayModEnv, 28, -12000) \
+    SF_GENERATOR_TYPE(SustainModEnv, 29, 0) \
+    SF_GENERATOR_TYPE(ReleaseModEnv, 30, -12000) \
+    SF_GENERATOR_TYPE(KeynumToModEnvHold, 31, 0) \
+    SF_GENERATOR_TYPE(KeynumToModEnvDecay, 32, 0) \
+    SF_GENERATOR_TYPE(DelayVolEnv, 33, -12000) \
+    SF_GENERATOR_TYPE(AttackVolEnv, 34, -12000) \
+    SF_GENERATOR_TYPE(HoldVolEnv, 35, -12000) \
+    SF_GENERATOR_TYPE(DecayVolEnv, 36, -12000) \
+    SF_GENERATOR_TYPE(SustainVolEnv, 37, 0) \
+    SF_GENERATOR_TYPE(ReleaseVolEnv, 38, -12000) \
+    SF_GENERATOR_TYPE(KeynumToVolEnvHold, 39, 0) \
+    SF_GENERATOR_TYPE(KeynumToVolEnvDecay, 40, 0) \
+    SF_GENERATOR_TYPE(Instrument, 41, 0) \
+    SF_GENERATOR_TYPE(reserved1, 42, 0) \
+    SF_GENERATOR_TYPE(KeyRange, 43, 0x7f00) \
+    SF_GENERATOR_TYPE(VelRange, 44, 0x7f00) \
+    SF_GENERATOR_TYPE(StartloopAddrsCoarseOffset, 45, 0) \
+    SF_GENERATOR_TYPE(Keynum, 46, -1) \
+    SF_GENERATOR_TYPE(Velocity, 47, -1) \
+    SF_GENERATOR_TYPE(InitialAttenuation, 48, 0) \
+    SF_GENERATOR_TYPE(reserved2, 49, 0) \
+    SF_GENERATOR_TYPE(EndloopAddrsCoarseOffset, 50, 0) \
+    SF_GENERATOR_TYPE(CoarseTune, 51, 0) \
+    SF_GENERATOR_TYPE(FineTune, 52, 0) \
+    SF_GENERATOR_TYPE(SampleID, 53, 0) \
+    SF_GENERATOR_TYPE(SampleModes, 54, 0) \
+    SF_GENERATOR_TYPE(reserved3, 55, 0) \
+    SF_GENERATOR_TYPE(ScaleTuning, 56, 100) \
+    SF_GENERATOR_TYPE(ExclusiveClass, 57, 0) \
+    SF_GENERATOR_TYPE(OverridingRootKey, 58, -1) \
+    SF_GENERATOR_TYPE(unused5, 59, 0) \
+    SF_GENERATOR_TYPE(EndOper, 60, 0)
+
 enum GeneratorType : uint16_t {
-    StartAddrsOffset = 0, // Offset Start Address
-    EndAddrsOffset = 1, // Offset End Address 
-    StartloopAddrsOffset = 2, // Offset Startloop Address
-    EndloopAddrsOffset = 3, // Offset Endloop Address
-    StartAddrsCoarseOffset = 4, // Offset Start Address Coarse
-    ModLfoToPitch = 5, // Modulation LFO to Pitch 
-    VibLfoToPitch = 6,  // Vibrato LFO to Pitch
-    ModEnvToPitch = 7, // Modulation Envelope to Pitch 
-    InitialFilterFc = 8, // Initial Filter Cutoff Frequency
-    InitialFilterQ = 9, // Initial Filter Q
-    ModLfoToFilterFc = 10, // Modulation LFO to Filter Cutoff Frequency
-    ModEnvToFilterFc = 11, // Modulation Envelope to Filter Cutoff Frequency 
-    EndAddrsCoarseOffset = 12, // Offset End Address Coarse
-    ModLfoToVolume = 13, // Modulation LFO to Volume
-    ChorusEffectsSend = 15, // Chorus Effects Send
-    ReverbEffectsSend = 16, // Reverb Effects Send
-    Pan = 17, // Pan
-    DelayModLFO = 21, // Delay Modulation LFO   
-    FreqModLFO = 22, // Frequency Modulation LFO
-    DelayVibLFO = 23, // Delay Vibrato LFO
-    FreqVibLFO = 24, // Frequency Vibrato LFO 
-    DelayModEnv = 25, // Delay Modulation Envelope
-    AttackModEnv = 26, // Attack Modulation Envelope
-    HoldModEnv = 27, // Hold Modulation Envelope
-    DecayModEnv = 28, // Decay Modulation Envelope
-    SustainModEnv = 29, // Sustain Modulation Envelope
-    ReleaseModEnv = 30, // Release Modulation Envelope
-    KeynumToModEnvHold = 31, // Key Number to Modulation Envelope Hold  
-    KeynumToModEnvDecay = 32, // Key Number to Modulation Envelope Decay
-    DelayVolEnv = 33, // Delay Volume Envelope
-    AttackVolEnv = 34,  // Attack Volume Envelope 
-    HoldVolEnv = 35, // Hold Volume Envelope
-    DecayVolEnv = 36, // Decay Volume Envelope
-    SustainVolEnv = 37, // Sustain Volume Envelope 
-    ReleaseVolEnv = 38, // Release Volume Envelope
-    KeynumToVolEnvHold = 39, // Key Number to Volume Envelope Hold
-    KeynumToVolEnvDecay = 40, // Key Number to Volume Envelope Decay 
-    Instrument = 41, // Instrument Index
-    KeyRange = 43, // Key Range  
-    VelRange = 44, // Velocity Range  
-    StartloopAddrsCoarseOffset = 45, // Offset Startloop Address Coarse 
-    Keynum = 46, // Forced MIDI Key Number
-    Velocity = 47, // Forced MIDI Velocity 
-    InitialAttenuation = 48, // Initial Attenuation 
-    EndloopAddrsCoarseOffset = 50, // Offset Endloop Address Coarse
-    CoarseTune = 51, // Coarse Tune  
-    FineTune = 52, // Fine Tune 
-    SampleID = 53, // Sample Index 
-    SampleModes = 54, // Sample Modes
-    ScaleTuning = 56, // Scale Tuning 
-    ExclusiveClass = 57, // Exclusive Class   
-    OverridingRootKey = 58, // Overriding Root Key
-    EndOper = 60  // End Operator
+#define SF_GENERATOR_TYPE(name, index, default) name = index,
+    SF_GENERATOR_TYPES
+#undef SF_GENERATOR_TYPE
+};
+
+union GenAmount {
+    int16_t sAmount;
+    uint16_t uAmount;
+    struct {
+        uint8_t lowByte;
+        uint8_t highByte;
+    };
+};
+
+struct Generator {
+    GeneratorType genOper;
+    GenAmount amount;
+};  // pgen or igen
+static_assert(sizeof(Generator) == 4);
+typedef Generator pgenData;
+typedef Generator igenData;
+
+typedef std::array<GenAmount, 61> GeneratorPack;
+
+constexpr GeneratorPack defaultGenPack {
+#define SF_GENERATOR_TYPE(name, index, defaultVal) defaultVal,
+    SF_GENERATOR_TYPES
+#undef SF_GENERATOR_TYPE
+};
+
+enum LoopMode {
+    NoLoop = 0,
+    Coutinuous = 1,
+    Unused = 2,
+    ToEnd = 3,
 };
 
 enum SrcPalette {
@@ -194,21 +243,6 @@ static_assert(sizeof(Modulator) == 10);
 typedef Modulator pmodData;
 typedef Modulator imodData;
 
-struct Generator {
-    GeneratorType genOper;
-    union {
-        struct {
-            uint8_t lowByte;
-            uint8_t highByte;
-        };
-        int16_t sAmount;
-        uint16_t uAmount;
-    };
-};  // pgen or igen
-static_assert(sizeof(Generator) == 4);
-typedef Generator pgenData;
-typedef Generator igenData;
-
 enum SampleType : uint16_t {
     mono = 0x0001,
     right = 0x0002,
@@ -243,6 +277,9 @@ protected:
     mio::basic_mmap_source<uint8_t> handler;
     uint16_t _version = 0;
 
+    std::mutex cacheMtx;
+    std::map<uint32_t, AudioData> sampleCache;
+
     uint8_t* smplHandler = nullptr;
     size_t smplSize = 0;
 
@@ -265,7 +302,9 @@ public:
     SoundFont& operator=(const SoundFont& other);
 
     uint16_t version() const;
-    AudioData sample(const shdrData &sampleInfo,
+    AudioData sample(uint32_t startOffset, 
+        uint32_t length,
+        uint16_t originalSampleRate,
         uint32_t targetSampleRate,
         uint8_t quality);  // 0-4
 
@@ -296,20 +335,20 @@ struct SampleAttribute {
     uint8_t pitch = 0;
     uint8_t loopMode = 0;
 
-    uint16_t sampleRate = 0;
-    int32_t startOffset = 0;
-    int32_t endOffset = 0;
-    int32_t startLoop = 0;
-    int32_t endLoop = 0;
+    uint32_t sampleRate = 0;
+    uint32_t startOffset = 0;
+    uint32_t endOffset = 0;
+    uint32_t startLoop = 0;
+    uint32_t endLoop = 0;
 
     float pan = 0;
     float attenuation = 1.;
-    float delayVol = 0;
-    float attackVol = 0;
-    float holdVol = 0;
-    float decayVol = 0;
+    float delayVol = timecents_to_s(-12000);
+    float attackVol = timecents_to_s(-12000);
+    float holdVol = timecents_to_s(-12000);
+    float decayVol = timecents_to_s(-12000);
     float sustainVol = 1.;
-    float releaseVol = 0;
+    float releaseVol = timecents_to_s(-12000);
 };
 
 struct SampleInfo {
@@ -317,26 +356,68 @@ struct SampleInfo {
     SampleAttribute attr;
 };
 
+typedef std::vector<const SampleAttribute*> SampleInfoPack;
+
+struct Sample {
+    SampleAttribute attr;
+    AudioData audio;
+};
+
 // (Bank, Preset)
 typedef uint16_t PresetHead;
 typedef std::vector<SampleInfo> SampleInfos;
 typedef std::map<PresetHead, SampleInfos> PresetIndex;
 
+class VolEnvelope {
+public:
+    uint32_t noteDurationFrames;
+    uint32_t durationFrames;
+
+    uint32_t delayFrames = 0;
+
+    uint32_t attackStart;
+    uint32_t attackFrames = 0;
+
+    uint32_t holdStart;
+    uint32_t holdFrames = 0;
+    float holdLevel = 1.;
+
+    uint32_t decayStart;
+    uint32_t decayFrames = 0;
+
+    uint32_t sustainStart;
+    uint32_t sustainFrames = 0;
+    float sustainLevel = 1.;
+
+    uint32_t releaseStart;
+    uint32_t releaseFrames = 0;
+    float releaseLevel = 0.f;
+
+    VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, float duration);
+};
+
 class PrestoSoundFont {
 private:
     sf_internal::SoundFont sf;
     uint32_t sampleRate;
+    uint8_t quality;
     bool stereo;
     PresetIndex presetIdx;
 
-    void handle_gen(SampleInfo &sInfo, const sf_internal::Generator &gen);
-    void handle_smpl(SampleInfo instInfo, const PresetHead pHead, uint16_t smplIdx);
-    void handle_inst(SampleInfo presetInfo, const PresetHead pHead, uint16_t instIdx);
+    std::mutex cacheMtx;
+    std::map<uint64_t, Sample> sampleCache;
+
+    void handle_smpl(sf_internal::GeneratorPack presetInfo, sf_internal::GeneratorPack instInfo, const PresetHead pHead, uint16_t smplIdx);
+    void handle_inst(sf_internal::GeneratorPack presetInfo, const PresetHead pHead, uint16_t instIdx);
     void handle_phdr();
 
 public:
-    PrestoSoundFont(const std::string &filepath, uint32_t sampleRate, bool stereo);
+    PrestoSoundFont(const std::string &filepath, uint32_t sampleRate, bool stereo, uint8_t quality);
 
+    const SampleInfoPack get_sample_info(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity) const;
+    const Sample get_raw_sample(const SampleAttribute &sampleAttr, uint8_t pitch);
+    const AudioData build_sample(const SampleAttribute &sampleAttr, uint8_t pitch, uint8_t velocity, float duration);
+    const AudioData build_note(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity, float duration);
 };
 
 }
