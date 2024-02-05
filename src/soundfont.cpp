@@ -286,10 +286,10 @@ inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, 
             static_cast<uint8_t>(instInfo[sf_internal::GeneratorType::SampleModes].sAmount),
 
             smplInfo.sampleRate,
-            smplInfo.startOffset,
-            smplInfo.endOffset,
-            smplInfo.startLoop,
-            smplInfo.endLoop,
+            smplInfo.startOffset + instInfo[StartAddrsOffset].sAmount + instInfo[StartAddrsCoarseOffset].sAmount * 32768,
+            smplInfo.endOffset + instInfo[EndAddrsOffset].sAmount + instInfo[EndAddrsCoarseOffset].sAmount * 32768,
+            smplInfo.startLoop + instInfo[StartloopAddrsOffset].sAmount + instInfo[StartloopAddrsCoarseOffset].sAmount * 32768,
+            smplInfo.endLoop + instInfo[EndloopAddrsOffset].sAmount + instInfo[EndloopAddrsCoarseOffset].sAmount * 32768,
 
             std::clamp(static_cast<float>(instInfo[Pan].sAmount) / 100.f, -0.5f, 0.5f),
             // std::clamp(db_to_amplitude(-static_cast<float>(instInfo[InitialAttenuation].sAmount) / 25.f), db_to_amplitude(-144.f), 1.f),
@@ -334,7 +334,6 @@ inline void PrestoSoundFont::handle_inst(sf_internal::GeneratorPack presetInfo, 
 
 inline void PrestoSoundFont::handle_phdr() {
     for(auto pIdx = 0; pIdx < sf.phdr_num() - 1; ++pIdx) {
-    // for(auto pIdx = 2; pIdx < 3; ++pIdx) {
         const auto &thisPreset = sf.phdr(pIdx);
         const auto &nextPreset = sf.phdr(pIdx + 1);
         PresetHead pHead = static_cast<uint16_t>((thisPreset.bankNum << 8) | thisPreset.presetNum);
@@ -365,8 +364,8 @@ inline void PrestoSoundFont::handle_phdr() {
     };
 };
 
-PrestoSoundFont::PrestoSoundFont(const std::string &filepath, uint32_t sampleRate, bool stereo, uint8_t quality):
-    sf(sf_internal::SoundFont(filepath)), sampleRate(sampleRate), stereo(stereo), quality(quality) {
+PrestoSoundFont::PrestoSoundFont(const std::string &filepath, uint32_t sampleRate, uint8_t quality):
+    sf(sf_internal::SoundFont(filepath)), sampleRate(sampleRate), quality(quality) {
     handle_phdr();
 };
 
@@ -395,7 +394,7 @@ const SampleInfoPack PrestoSoundFont::get_sample_info(uint8_t preset, uint8_t ba
 const Sample PrestoSoundFont::get_raw_sample(const SampleAttribute &sampleAttr, uint8_t pitch) {
     std::lock_guard<std::mutex> lk(cacheMtx);
 
-    auto cachedSample = sampleCache.find(pitch + (sampleAttr.startOffset << 8));
+    auto cachedSample = sampleCache.find(pitch | (sampleAttr.startOffset << 8));
     if(cachedSample != sampleCache.end())
         return cachedSample->second;
 
@@ -428,7 +427,7 @@ const Sample PrestoSoundFont::get_raw_sample(const SampleAttribute &sampleAttr, 
     rawSample.attr.sampleRate = sampleRate;
     rawSample.attr.pitch = pitch;
 
-    sampleCache[pitch + (sampleAttr.startOffset << 8)] = rawSample;
+    sampleCache[pitch | (sampleAttr.startOffset << 8)] = rawSample;
 
     return rawSample;
 };
@@ -482,6 +481,7 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
     // Delay
     if(velEnv.delayFrames)
         xt::view(sample, xt::all(), xt::range(_, velEnv.attackStart)) *= 0;
+
     // Attack
     if(velEnv.attackFrames)
         xt::view(sample, xt::all(), xt::range(velEnv.attackStart, velEnv.holdStart)) *= xt::linspace<audio_t>(0., velEnv.holdLevel, velEnv.attackFrames);
@@ -501,7 +501,7 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
     return sample;
 };
 
-const AudioData PrestoSoundFont::build_note(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity, float duration) {
+const AudioData PrestoSoundFont::build_note(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity, float duration, bool stereo) {
     const SampleInfoPack sampleInfos = get_sample_info(preset, bank, pitch, velocity);
 
     AudioData outputSample = zero_audio_data(stereo ? 2 : 1, 1);

@@ -32,7 +32,7 @@ inline int16_t amplitude_to_cb(float amp) {
 };
 
 inline uint32_t s_to_frames(float second, uint16_t sampleRate) {
-    return second * sampleRate;
+    return ceil(second * sampleRate);
 };
 
 namespace math_internal {
