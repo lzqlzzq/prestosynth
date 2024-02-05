@@ -2,8 +2,10 @@ cmake_minimum_required(VERSION 3.20)
 project(prestosynth VERSION 0.1.0 LANGUAGES CXX C)
 
 option(BUILD_EXAMPLES "Build examples" OFF)
-
 option(BUILD_TESTING "Avoid libsamplerate to build test." OFF)
+
+# set(CMAKE_BUILD_TYPE Release)
+
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/mio)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/MPMCQueue)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libsamplerate)
@@ -31,4 +33,7 @@ if(BUILD_EXAMPLES)
 
 	add_executable(fetchsample ${CMAKE_CURRENT_SOURCE_DIR}/example/fetchsample.cpp)
 	target_link_libraries(fetchsample PRIVATE prestosynth)
+
+	add_executable(test_render ${CMAKE_CURRENT_SOURCE_DIR}/example/test_render.cpp)
+	target_link_libraries(test_render PRIVATE prestosynth)
 endif()

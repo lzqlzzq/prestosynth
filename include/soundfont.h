@@ -401,7 +401,6 @@ private:
     sf_internal::SoundFont sf;
     uint32_t sampleRate;
     uint8_t quality;
-    bool stereo;
     PresetIndex presetIdx;
 
     std::mutex cacheMtx;
@@ -411,13 +410,14 @@ private:
     void handle_inst(sf_internal::GeneratorPack presetInfo, const PresetHead pHead, uint16_t instIdx);
     void handle_phdr();
 
-public:
-    PrestoSoundFont(const std::string &filepath, uint32_t sampleRate, bool stereo, uint8_t quality);
-
     const SampleInfoPack get_sample_info(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity) const;
     const Sample get_raw_sample(const SampleAttribute &sampleAttr, uint8_t pitch);
     const AudioData build_sample(const SampleAttribute &sampleAttr, uint8_t pitch, uint8_t velocity, float duration);
-    const AudioData build_note(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity, float duration);
+
+public:
+    PrestoSoundFont(const std::string &filepath, uint32_t sampleRate, uint8_t quality);
+
+    const AudioData build_note(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity, float duration, bool stereo);
 };
 
 }
