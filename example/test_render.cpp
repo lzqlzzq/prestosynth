@@ -6,19 +6,15 @@
 
 #include "audio_util.h"
 #include "math_util.h"
-#include "soundfont.h"
+#include "synthesizer.h"
 
 int main(int argc, char const *argv[])
 {
-    prestosynth::PrestoSoundFont sf(std::string("../example/MuseScore_General.sf3"), 44100, 0);
+    prestosynth::Synthesizer synth(std::string("../example/MuseScore_General.sf3"), 44100, 0);
+
     /*
-    prestosynth::AudioData audio = sf.sample(shdr.startOffset,
-        shdr.endOffset - shdr.startOffset,
-        shdr.sampleRate,
-        48000,
-        4);
-    */
-    prestosynth::AudioData audio = sf.build_note(0, 0, 52, 100, 2., true);
+
+    prestosynth::AudioData audio = synth(, true);
 
     FILE *f = fopen("l.pcm", "wb");
     fwrite(audio.data(), sizeof(prestosynth::audio_t), audio.shape(1), f);
@@ -27,6 +23,7 @@ int main(int argc, char const *argv[])
     FILE *f2 = fopen("r.pcm", "wb");
     fwrite(audio.data() + audio.shape(1), sizeof(prestosynth::audio_t), audio.shape(1), f2);
     fclose(f2);
+    */
 
     return 0;
 };
