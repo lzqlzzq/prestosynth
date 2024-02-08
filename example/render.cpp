@@ -28,13 +28,6 @@ int main(int argc, char const *argv[])
     sequence.tracks = { track };
     prestosynth::AudioData audio = synth.render_single_thread(sequence, true);
 
-    FILE *f = fopen("l.pcm", "wb");
-    fwrite(audio.data(), sizeof(prestosynth::audio_t), audio.shape(1), f);
-    fclose(f);
-
-    FILE *f2 = fopen("r.pcm", "wb");
-    fwrite(audio.data() + audio.shape(1), sizeof(prestosynth::audio_t), audio.shape(1), f2);
-    fclose(f2);
-
+    prestosynth::write_audio("test.wav", audio, 44100);
     return 0;
 };
