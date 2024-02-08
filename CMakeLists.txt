@@ -34,6 +34,6 @@ if(BUILD_EXAMPLES)
 	add_executable(fetchsample ${CMAKE_CURRENT_SOURCE_DIR}/example/fetchsample.cpp)
 	target_link_libraries(fetchsample PRIVATE prestosynth)
 
-	add_executable(test_render ${CMAKE_CURRENT_SOURCE_DIR}/example/test_render.cpp)
-	target_link_libraries(test_render PRIVATE prestosynth)
+	add_executable(render ${CMAKE_CURRENT_SOURCE_DIR}/example/render.cpp)
+	target_link_libraries(render PRIVATE prestosynth)
 endif()

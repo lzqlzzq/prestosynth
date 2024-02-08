@@ -4,11 +4,11 @@
 
 namespace prestosynth {
 
-AudioData resample_mono(AudioData sampleData, float ratio, uint8_t quality) {
+AudioData resample_mono(AudioData &sampleData, float ratio, uint8_t quality) {
     SRC_DATA srcInfo;
     srcInfo.src_ratio = ratio;
-    srcInfo.input_frames = sampleData.shape()[1];
-    srcInfo.output_frames = sampleData.shape()[1] * srcInfo.src_ratio;
+    srcInfo.input_frames = sampleData.shape(1);
+    srcInfo.output_frames = sampleData.shape(1) * srcInfo.src_ratio;
 
     AudioData resampledData = zero_audio_data(1, srcInfo.output_frames);
 

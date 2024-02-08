@@ -3,10 +3,14 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
+
 #include "xtensor/xarray.hpp"
 #include "xtensor/xtensor.hpp"
 #include "xtensor/xpad.hpp"
 #include "xtensor/xview.hpp"
+#include "byte_util.h"
+#include "wav.h"
 
 namespace prestosynth {
 
@@ -27,7 +31,16 @@ inline AudioData empty_audio_data(size_t channels, size_t frames) {
 	});
 };
 
-AudioData resample_mono(AudioData sampleData, float ratio, uint8_t quality);
+AudioData resample_mono(AudioData &sampleData, float ratio, uint8_t quality);
+
+inline void write_audio(const std::string &filePath, AudioData &data, uint16_t sampleRate) {
+	xt::xarray<audio_t> transposed = xt::transpose(data, {1, 0});
+	WAVE_write(const_cast<char*>(filePath.c_str()),
+		data.shape(0) * data.shape(1),
+		const_cast<audio_t*>(transposed.data()),
+		sampleRate,
+		data.shape(0));
+};
 
 }
 
