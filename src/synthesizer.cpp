@@ -17,7 +17,7 @@ AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stere
             AudioData noteAudio = sf.build_note(track.preset, track.bank, note.pitch, note.velocity, note.duration, stereo);
 
             if(startFrame + noteAudio.shape(1) > trackAudio.shape(1))
-                trackAudio = xt::pad(trackAudio, {{0, 0}, {startFrame + noteAudio.shape(1) - trackAudio.shape(1)}});
+                trackAudio = xt::pad(trackAudio, {{0, 0}, {0, startFrame + noteAudio.shape(1) - trackAudio.shape(1)}});
 
             xt::view(trackAudio, xt::all(), xt::range(startFrame, startFrame + noteAudio.shape(1))) += noteAudio;
         }

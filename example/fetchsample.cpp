@@ -10,7 +10,7 @@
 
 int main(int argc, char const *argv[])
 {
-    prestosynth::PrestoSoundFont sf(std::string("../example/MuseScore_General.sf3"), 44100, 0);
+    prestosynth::PrestoSoundFont sf(std::string("../example/MuseScore_General.sf2"), 44100, 0);
     /*
     prestosynth::AudioData audio = sf.sample(shdr.startOffset,
         shdr.endOffset - shdr.startOffset,

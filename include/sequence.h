@@ -22,7 +22,7 @@ typedef std::vector<Note> Notes;
 struct Track {
     uint8_t preset = 0;                   // General MIDI Instrument Number
     uint8_t bank = 0;                     // General MIDI Bank Number
-    float volume = -20.f;                 // Track volume in dB
+    float volume = 0.f;                 // Track volume in dB
 
     Notes notes;
 
@@ -43,7 +43,7 @@ struct Track {
 typedef std::vector<Track> Tracks;
 
 struct Sequence {
-    float volume = -40.f;                 // Master volume in dB
+    float volume = -20.f;                 // Master volume in dB
 
     Tracks tracks;
 
