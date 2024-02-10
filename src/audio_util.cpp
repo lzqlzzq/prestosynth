@@ -23,7 +23,7 @@ AudioData resample_mono(AudioData &sampleData, float ratio, uint8_t quality) {
 
 void write_audio(const std::string &filePath, AudioData &data, uint16_t sampleRate) {
     xt::xarray<audio_t> transposed = xt::transpose(data, {1, 0});
-    WAVE_write(const_cast<char*>(filePath.c_str()),
+    WAVE_write(filePath,
         data.shape(0),
         data.shape(1),
         sampleRate,
