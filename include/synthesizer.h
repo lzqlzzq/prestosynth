@@ -3,7 +3,7 @@
 
 #include "sequence.h"
 #include "soundfont.h"
-#include "audio_util.h"
+#include "util/audio_util.h"
 
 namespace psynth {
 

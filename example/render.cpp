@@ -5,8 +5,6 @@
 #include <cstdio>
 
 #include "sequence.h"
-#include "audio_util.h"
-#include "math_util.h"
 #include "synthesizer.h"
 
 int main(int argc, char const *argv[])

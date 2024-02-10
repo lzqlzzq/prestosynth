@@ -4,8 +4,6 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "audio_util.h"
-#include "math_util.h"
 #include "soundfont.h"
 
 int main(int argc, char const *argv[])

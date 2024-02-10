@@ -1,8 +1,13 @@
 #include <algorithm>
+
+#include "xtensor/xpad.hpp"
+#include "xtensor/xcontainer.hpp"
 #include "synthesizer.h"
-#include "math_util.h"
+#include "util/math_util.h"
 
 namespace psynth {
+
+using namespace xt::placeholders;
 
 Synthesizer::Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality):
     sf(PrestoSoundFont(sfPath, sampleRate, quality)), sampleRate(sampleRate) {};
