@@ -3,7 +3,6 @@
 
 #include <array>
 #include <cmath>
-#include "xtensor/xarray.hpp"
 
 namespace psynth {
 
