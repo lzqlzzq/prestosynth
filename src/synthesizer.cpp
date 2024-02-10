@@ -36,6 +36,8 @@ AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stere
 AudioData Synthesizer::render(const Sequence &sequence, bool stereo, uint8_t workers = 0) {
     if(!workers || workers == 1) return render_single_thread(sequence, stereo);
     // TODO: Implement multithread rendering
+    // Dummy multithreading for now.
+    return render_single_thread(sequence, stereo);
 };
 
 }
