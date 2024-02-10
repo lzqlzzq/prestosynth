@@ -270,7 +270,7 @@ struct SampleHeader {
 };  // shdr
 static_assert(sizeof(SampleHeader) == 46);
 typedef SampleHeader shdrData;
-
+#pragma pack()
 
 class SoundFont {
 protected:
