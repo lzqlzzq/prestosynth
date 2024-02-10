@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cstdint>
 
-namespace prestosynth {
+namespace psynth {
 
 struct Note {
     float start;

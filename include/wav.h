@@ -6,7 +6,7 @@
 #include <string>
 
 
-namespace prestosynth {
+namespace psynth {
 
 struct FMTChunk {
 	uint16_t format;  // 3: float, 1: short

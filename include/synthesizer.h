@@ -5,7 +5,7 @@
 #include "soundfont.h"
 #include "audio_util.h"
 
-namespace prestosynth {
+namespace psynth {
 
 class Synthesizer {
 private:

@@ -10,6 +10,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/mio)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/MPMCQueue)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libsamplerate)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/xtl)
+# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/xsimd)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/xtensor)
 
 file(GLOB_RECURSE prestosynth_src src/*.cpp src/*.c)

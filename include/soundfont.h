@@ -17,7 +17,7 @@
 #include "math_util.h"
 
 
-namespace prestosynth {
+namespace psynth {
 
 #define SF_META_CHUNK_TYPES                                   \
     SF_CHUNK_TYPE(RIFF)                                  \

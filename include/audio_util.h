@@ -11,7 +11,7 @@
 #include "xtensor/xview.hpp"
 #include "byte_util.h"
 
-namespace prestosynth {
+namespace psynth {
 
 typedef float audio_t;
 typedef xt::xarray<audio_t> AudioData;
