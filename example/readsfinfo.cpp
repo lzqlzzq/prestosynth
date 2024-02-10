@@ -3,7 +3,6 @@
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
-#include "byte_util.h"
 
 
 int main(int argc, char const *argv[])

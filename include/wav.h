@@ -2,7 +2,6 @@
 #define _WAV_H
 
 #include <cstdio>
-#include <exception>
 #include <string>
 
 
