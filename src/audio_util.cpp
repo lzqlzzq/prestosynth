@@ -3,7 +3,7 @@
 #include "xtensor/xio.hpp"
 #include "wav.h"
 
-namespace prestosynth {
+namespace psynth {
 
 AudioData resample_mono(AudioData &sampleData, float ratio, uint8_t quality) {
     SRC_DATA srcInfo;

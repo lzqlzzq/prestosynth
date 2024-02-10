@@ -31,3 +31,7 @@
 *.out
 *.app
 build/
+
+# Tool chains
+.idea/
+cmake-build-debug/
