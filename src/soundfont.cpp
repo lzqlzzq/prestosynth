@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-namespace prestosynth {
+namespace psynth {
 
 namespace sf_internal {
 

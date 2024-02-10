@@ -11,8 +11,8 @@
 
 int main(int argc, char const *argv[])
 {
-    prestosynth::Synthesizer synth(std::string("../example/MuseScore_General.sf3"), 44100, 0);
-    prestosynth::Track track;
+    psynth::Synthesizer synth(std::string("../example/MuseScore_General.sf3"), 44100, 0);
+    psynth::Track track;
     track.notes = {{0., 1., 67, 100},
                     {1., .5, 67, 100},
                     {1.5, .5, 70, 100},
@@ -24,10 +24,10 @@ int main(int argc, char const *argv[])
                     {5., .5, 70, 100},
                     {5.5, .5, 72, 100},
                     {6., 1., 70, 100}};
-    prestosynth::Sequence sequence;
+    psynth::Sequence sequence;
     sequence.tracks = { track };
-    prestosynth::AudioData audio = synth.render_single_thread(sequence, true);
+    psynth::AudioData audio = synth.render_single_thread(sequence, true);
 
-    prestosynth::write_audio("test.wav", audio, 44100);
+    psynth::write_audio("test.wav", audio, 44100);
     return 0;
 };

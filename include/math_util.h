@@ -5,7 +5,7 @@
 #include <cmath>
 #include "xtensor/xarray.hpp"
 
-namespace prestosynth {
+namespace psynth {
 
 inline float timecents_to_ms(int16_t timecent) {
     return exp2f(static_cast<float>(timecent) / 1200.0) * 1000.0f;

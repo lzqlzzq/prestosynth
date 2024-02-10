@@ -5,7 +5,7 @@
 #include <climits>
 #include <iostream>
 
-namespace prestosynth {
+namespace psynth {
 
 inline std::string read_string_bytes(const uint8_t* cursor, size_t length) {
     return std::string(reinterpret_cast<const char*>(cursor), length);

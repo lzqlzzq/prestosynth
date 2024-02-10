@@ -2,7 +2,7 @@
 #include "synthesizer.h"
 #include "math_util.h"
 
-namespace prestosynth {
+namespace psynth {
 
 Synthesizer::Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality):
     sf(PrestoSoundFont(sfPath, sampleRate, quality)), sampleRate(sampleRate) {};
