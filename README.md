@@ -10,6 +10,7 @@ GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/lzqlzzq/prestosynth.git
 * **prestosynth** is not intended to be a real-time synthesizer but to fully utilize parallelism.
 * **prestosynth** will yield more memory than other synthsizers due to aggressive cache mechanism.
 * `Modulator` of `Soundfont Standard` is not implemented yet, for its complex topology.
+* `MIDI Controller` is not implemented yet.
 # To be Implemented
 - [ ] Better, variable pitch shifting (OLA-based or delay-line based algorithm)
 - [ ] Basic LPF
