@@ -45,7 +45,7 @@ inline void WAVE_write(const std::string &filename,
 	fmt.blockAlign = num_channels * sizeof(float);
 	fmt.sampleRate = sample_rate;
 	fmt.byteRate = sample_rate * num_channels * sizeof(float);
-	fwrite(&FMT_FLOAT, sizeof(FMTChunk), 1, fp);
+	fwrite(&fmt, sizeof(FMTChunk), 1, fp);
 
 	// write data subchunk
 	fwrite("data", 1, 4, fp);

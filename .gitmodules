@@ -7,9 +7,6 @@
 [submodule "3rdparty/libsamplerate"]
 	path = 3rdparty/libsamplerate
 	url = https://github.com/libsndfile/libsamplerate.git
-[submodule "3rdparty/xtensor"]
-	path = 3rdparty/xtensor
-	url = https://github.com/xtensor-stack/xtensor.git
-[submodule "3rdparty/xtl"]
-	path = 3rdparty/xtl
-	url = https://github.com/xtensor-stack/xtl.git
+[submodule "3rdparty/eigen"]
+	path = 3rdparty/eigen
+	url = https://gitlab.com/libeigen/eigen.git

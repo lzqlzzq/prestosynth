@@ -140,7 +140,7 @@ AudioData SoundFont::sample(uint32_t startOffset, uint32_t length, uint16_t orig
     AudioData sampleData;
 
     if(_version == 2) {
-        sampleData = zero_audio_data(1, length);
+        sampleData = Eigen::ArrayXXf::Zero(1, length);
 
         // TODO: sm24
         src_short_to_float_array(
@@ -159,7 +159,7 @@ AudioData SoundFont::sample(uint32_t startOffset, uint32_t length, uint16_t orig
         if(sampleNum == -1)
             throw std::ios_base::failure("Cannot decode sample!");
 
-        sampleData = zero_audio_data(1, sampleNum);
+        sampleData = Eigen::ArrayXXf(1, sampleNum);
         src_short_to_float_array(
             output,
             sampleData.data(),

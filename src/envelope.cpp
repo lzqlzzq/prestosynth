@@ -1,8 +1,10 @@
 #include "envelope.h"
 
-namespace psynth {
+#include <Eigen/Core>
 
-using namespace xt::placeholders;
+#include <iostream>
+
+namespace psynth {
 
 VolEnvelope::VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, float duration) {
     durationFrames = s_to_frames(duration, sampleRate);
@@ -75,23 +77,23 @@ release:
 void VolEnvelope::apply(AudioData &sample) const {
     // Delay
     if(this->delayFrames)
-        xt::view(sample, xt::all(), xt::range(_, this->attackStart)) *= 0;
+        sample.leftCols(this->attackStart) = 0;
 
     // Attack
     if(this->attackFrames)
-        xt::view(sample, xt::all(), xt::range(this->attackStart, this->holdStart)) *= xt::linspace<audio_t>(0., this->holdLevel, this->attackFrames);
+        sample.middleCols(this->attackStart, this->attackFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->attackFrames, 0, this->holdLevel);
 
     // Decay
     if(this->decayFrames)
-        xt::view(sample, xt::all(), xt::range(this->decayStart, this->sustainStart)) *= xt::linspace<audio_t>(1., this->sustainLevel, this->decayFrames);
+        sample.middleCols(this->decayStart, this->decayFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->decayFrames, 1.f, this->sustainLevel);
 
     // Sustain
     if(this->sustainFrames)
-        xt::view(sample, xt::all(), xt::range(this->sustainStart, this->releaseStart)) *= this->sustainLevel;
+        sample.middleCols(this->sustainStart, this->sustainFrames) *= sustainLevel;
 
     // Release
     if(this->releaseFrames)
-        xt::view(sample, xt::all(), xt::range(this->releaseStart, _)) *= xt::linspace<audio_t>(this->releaseLevel, 0, this->releaseFrames);
+        sample.rightCols(this->releaseFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->releaseFrames, this->sustainLevel, 0.f);
 };
 
 }
