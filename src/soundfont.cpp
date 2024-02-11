@@ -5,8 +5,6 @@
 #include "envelope.h"
 #include "util/math_util.h"
 
-#include <iostream>
-
 namespace psynth {
 
 using namespace xt::placeholders;
@@ -226,6 +224,8 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
     }
 
     // Processing volume envelope
+    velEnv.apply(sample);
+
     return sample;
 };
 
@@ -250,6 +250,7 @@ const AudioData PrestoSoundFont::build_note(uint8_t preset, uint8_t bank, uint8_
         } else {
             xt::view(outputSample, xt::all(), xt::range(_, thisSample.shape(1))) += thisSample;
         }
+
     }
 
     return outputSample;
