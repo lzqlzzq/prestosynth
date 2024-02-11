@@ -8,13 +8,9 @@
 
 int main(int argc, char const *argv[])
 {
-    psynth::sf_internal::SoundFont sf(std::string("../example/MuseScore_General.sf2"));
+    psynth::PrestoSoundFont sf(std::string("../example/MuseScore_General.sf2"), 44100, 0);
 
-    psynth::AudioData audio = sf.sample(23408524,
-        23451868 - 23408524,
-        44100,
-        44100,
-        0);
+    psynth::AudioData audio = sf.build_note(40, 0, 60, 40, 10.f, false);
 
     psynth::write_audio("test2.wav", audio, 44100);
 
