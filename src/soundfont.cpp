@@ -168,8 +168,15 @@ const Sample PrestoSoundFont::get_raw_sample(const SampleAttribute &sampleAttr, 
     };
 
     shiftRatio *= static_cast<float>(sampleRate) / static_cast<float>(sampleAttr.sampleRate);
-    rawSample.attr.startLoop *= shiftRatio;
-    rawSample.attr.endLoop *= shiftRatio;
+    if(sf.version() == 2) {
+        rawSample.attr.startLoop -= rawSample.attr.startOffset;
+        rawSample.attr.endLoop -= rawSample.attr.startOffset;
+        rawSample.attr.startLoop *= shiftRatio;
+        rawSample.attr.endLoop *= shiftRatio;
+    } else {
+        rawSample.attr.startLoop *= shiftRatio;
+        rawSample.attr.endLoop *= shiftRatio;
+    }
     rawSample.attr.sampleRate = sampleRate;
     rawSample.attr.pitch = pitch;
 
