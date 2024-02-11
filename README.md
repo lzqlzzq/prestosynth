@@ -11,6 +11,11 @@ GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/lzqlzzq/prestosynth.git
 * **prestosynth** will yield more memory than other synthsizers due to aggressive cache mechanism.
 * `Modulator` of `Soundfont Standard` is not implemented yet, for its complex topology.
 * `MIDI Controller` is not implemented yet.
+# Implemented
+- [x] Wavetable Oscillator
+- [x] Sample Looping
+- [x] Envelope Generator
+- [x] Gain Amplifier
 # To be Implemented
 - [ ] Better, variable pitch shifting (OLA-based or delay-line based algorithm)
 - [ ] Basic LPF
