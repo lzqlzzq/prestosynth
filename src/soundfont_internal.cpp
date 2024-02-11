@@ -140,7 +140,6 @@ AudioData SoundFont::sample(uint32_t startOffset, uint32_t length, uint16_t orig
     AudioData sampleData;
 
     if(_version == 2) {
-        length = length / 2;  // 1 sample in short = 2 bytes
         sampleData = zero_audio_data(1, length);
 
         // TODO: sm24
