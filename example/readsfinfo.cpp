@@ -17,12 +17,10 @@ int main(int argc, char const *argv[])
     std::cout << sf.ibag(2452).genIdx << std::endl;
     std::cout << sf.ibag(2453).genIdx << std::endl;
     std::cout << sf.shdr(1100).name << std::endl;
+    std::cout << sf.shdr(1100).startOffset << std::endl;
+    std::cout << sf.shdr(1100).endOffset << std::endl;
+    std::cout << sf.shdr(1100).sampleRate << std::endl;
 
-    for (int i = 11810; i < 11819; ++i)
-    {
-        std::cout << uint16_t(sf.igen(i).genOper) << std::endl;
-        std::cout << sf.igen(i).amount.sAmount << std::endl;
-    }
 
     return 0;
 };
