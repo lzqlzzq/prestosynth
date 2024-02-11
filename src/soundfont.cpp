@@ -1,13 +1,11 @@
 #include <algorithm>
 
-#include "xtensor/xpad.hpp"
 #include "soundfont.h"
 #include "envelope.h"
 #include "util/math_util.h"
 
+#include <iostream>
 namespace psynth {
-
-using namespace xt::placeholders;
 
 inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, sf_internal::GeneratorPack instInfo, const PresetHead pHead, uint16_t smplIdx) {
     using namespace sf_internal;
@@ -160,7 +158,7 @@ const Sample PrestoSoundFont::get_raw_sample(const SampleAttribute &sampleAttr, 
             0);  // Using linear interpolation for now
     }
 
-    monoSample = monoSample * sampleAttr.attenuation;
+    monoSample *= sampleAttr.attenuation;
 
     Sample rawSample {
         sampleAttr,
@@ -192,42 +190,46 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
     VolEnvelope velEnv(sampleAttr, sampleRate, duration);
 
     uint32_t noteDurationFrames = velEnv.noteDurationFrames;
-    AudioData sample = empty_audio_data(1, noteDurationFrames);
+    AudioData sample = Eigen::ArrayXXf::Zero(1, noteDurationFrames);
 
     // Processing loop
     if(rawSample.attr.loopMode == sf_internal::LoopMode::NoLoop ||
         rawSample.attr.loopMode == sf_internal::LoopMode::Unused ||
         noteDurationFrames <= rawSample.attr.endLoop) {
 
-        if(noteDurationFrames <= rawSample.audio.shape(1))
-            sample = xt::view(rawSample.audio, xt::all(), xt::range(_, noteDurationFrames));
-        else
-            sample = xt::pad(rawSample.audio, {{0, 0}, {0, noteDurationFrames - rawSample.audio.shape(1)}});
+        if(noteDurationFrames <= rawSample.audio.cols())
+            sample = rawSample.audio.leftCols(noteDurationFrames);
+        else {
+            sample.conservativeResize(sample.rows(), noteDurationFrames);
+            sample.leftCols(rawSample.audio.cols()) = rawSample.audio;
+        }
     } else if(rawSample.attr.loopMode == sf_internal::LoopMode::Coutinuous) {
         uint32_t loopLength = rawSample.attr.endLoop - rawSample.attr.startLoop;
         uint32_t curOffset = rawSample.attr.endLoop;
-        xt::view(sample, xt::all(), xt::range(_, curOffset)) = xt::view(rawSample.audio, xt::all(), xt::range(_, curOffset));
+
+        sample.leftCols(curOffset) = rawSample.audio.leftCols(curOffset);
         noteDurationFrames -= curOffset;
 
         while(noteDurationFrames > loopLength) {
-            xt::view(sample, xt::all(), xt::range(curOffset, curOffset + loopLength)) = xt::view(rawSample.audio, xt::all(), xt::range(rawSample.attr.startLoop, rawSample.attr.endLoop));
+            sample.middleCols(curOffset, loopLength) = rawSample.audio.middleCols(rawSample.attr.startLoop, loopLength);
+
             noteDurationFrames -= loopLength;
             curOffset += loopLength;
         }
-        xt::view(sample, xt::all(), xt::range(curOffset, _)) = xt::view(rawSample.audio, xt::all(), xt::range(rawSample.attr.startLoop, rawSample.attr.startLoop + noteDurationFrames));
+        sample.rightCols(sample.cols() - curOffset) = rawSample.audio.middleCols(rawSample.attr.startLoop, sample.cols() - curOffset);
     } else if(rawSample.attr.loopMode == sf_internal::LoopMode::ToEnd) {
         uint32_t loopLength = rawSample.attr.endLoop - rawSample.attr.startLoop;
         uint32_t curOffset = rawSample.attr.endLoop;
 
-        xt::view(sample, xt::all(), xt::range(_, curOffset)) = xt::view(rawSample.audio, xt::all(), xt::range(_, curOffset));
+        sample.leftCols(curOffset) = rawSample.audio.leftCols(curOffset);
         noteDurationFrames -= curOffset;
 
-        while(noteDurationFrames > rawSample.audio.shape(1) - rawSample.attr.startLoop) {
-            xt::view(sample, xt::all(), xt::range(curOffset, curOffset + loopLength)) = xt::view(rawSample.audio, xt::all(), xt::range(rawSample.attr.startLoop, rawSample.attr.endLoop));
+        while(noteDurationFrames > rawSample.audio.cols() - rawSample.attr.startLoop) {
+            sample.middleCols(curOffset, loopLength) = rawSample.audio.middleCols(rawSample.attr.startLoop, loopLength);
             noteDurationFrames -= loopLength;
             curOffset += loopLength;
         }
-        xt::view(sample, xt::all(), xt::range(curOffset, _)) = xt::view(rawSample.audio, xt::all(), xt::range(rawSample.attr.startLoop, rawSample.attr.startLoop + noteDurationFrames));
+        sample.rightCols(noteDurationFrames) = rawSample.audio.middleCols(rawSample.attr.startLoop, noteDurationFrames);
     }
 
     // Processing volume envelope
@@ -239,25 +241,26 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
 const AudioData PrestoSoundFont::build_note(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity, float duration, bool stereo) {
     const SampleInfoPack sampleInfos = get_sample_info(preset, bank, pitch, velocity);
 
-    AudioData outputSample = zero_audio_data(stereo ? 2 : 1, 1);
+    AudioData outputSample = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, 1);
     uint32_t maxFrames = 0;
     for(auto sampleInfo : sampleInfos) {
         AudioData thisSample = build_sample(*sampleInfo, pitch, velocity, duration);
 
-        if(outputSample.shape(1) < thisSample.shape(1)) {
+        if(outputSample.cols() < thisSample.cols()) {
             std::swap(thisSample, outputSample);
 
-            if(stereo)
-                outputSample = xt::tile(outputSample, {2, 1});
+            if(stereo) {
+                outputSample.conservativeResize(2, outputSample.cols());
+                outputSample.row(1) = outputSample.row(0);
+            }
         }
 
         if(stereo) {
-            xt::view(outputSample, 0, xt::range(_, thisSample.shape(1))) += xt::row(thisSample, 0) * (0.5 - sampleInfo->pan);
-            xt::view(outputSample, 1, xt::range(_, thisSample.shape(1))) += xt::row(thisSample, 0) * (0.5 + sampleInfo->pan);
+            outputSample.row(0).leftCols(thisSample.cols()) += thisSample.row(0) * (0.5 - sampleInfo->pan);
+            outputSample.row(1).leftCols(thisSample.cols()) += thisSample.row(0) * (0.5 + sampleInfo->pan);
         } else {
-            xt::view(outputSample, xt::all(), xt::range(_, thisSample.shape(1))) += thisSample;
+            outputSample.leftCols(thisSample.cols()) += thisSample;
         }
-
     }
 
     return outputSample;
