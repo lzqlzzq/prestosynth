@@ -22,7 +22,7 @@ typedef std::vector<Note> Notes;
 struct Track {
     uint8_t preset = 0;                   // General MIDI Instrument Number
     uint8_t bank = 0;                     // General MIDI Bank Number
-    float volume = 0.f;                 // Track volume in dB
+    float volume = 0.f;                   // Track volume in dB
 
     Notes notes;
 
@@ -35,7 +35,7 @@ struct Track {
     inline float end() const {
         if(!notes.size()) return 0;
         return std::max_element(notes.begin(), notes.end(), [](const Note &lhs, const Note & rhs) {
-            return lhs.end() < lhs.end();
+            return lhs.end() < rhs.end();
         })->end();
     };
 };
@@ -56,7 +56,7 @@ struct Sequence {
     inline float end() const {
         if(!tracks.size()) return 0;
         return std::max_element(tracks.begin(), tracks.end(), [](const Track &lhs, const Track &rhs) {
-            return lhs.end() < lhs.end();
+            return lhs.end() < rhs.end();
         })->end();
     };
 };

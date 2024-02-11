@@ -5,6 +5,9 @@
 #include "synthesizer.h"
 #include "util/math_util.h"
 
+#include <iostream>
+#include <chrono>
+
 namespace psynth {
 
 using namespace xt::placeholders;
