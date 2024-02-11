@@ -4,7 +4,8 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "soundfont.h"
+#include "soundfont_internal.h"
+#include "util/audio_util.h"
 
 int main(int argc, char const *argv[])
 {

@@ -1,38 +1,34 @@
 #include <algorithm>
 
-#include "xtensor/xpad.hpp"
-#include "xtensor/xcontainer.hpp"
 #include "synthesizer.h"
 #include "util/math_util.h"
 
 namespace psynth {
 
-using namespace xt::placeholders;
-
 Synthesizer::Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality):
     sf(PrestoSoundFont(sfPath, sampleRate, quality)), sampleRate(sampleRate) {};
 
 AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stereo) {
-    AudioData master = zero_audio_data(stereo ? 2 : 1, 1);
+    AudioData master = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, 1);
     for(const Track &track : sequence.tracks) {
-        AudioData trackAudio = zero_audio_data(stereo ? 2 : 1, s_to_frames(track.end(), sampleRate));
+        AudioData trackAudio = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, s_to_frames(track.end(), sampleRate));
 
         for(const Note &note : track.notes) {
             uint32_t startFrame = s_to_frames(note.start, sampleRate);
             AudioData noteAudio = sf.build_note(track.preset, track.bank, note.pitch, note.velocity, note.duration, stereo);
 
-            if(startFrame + noteAudio.shape(1) > trackAudio.shape(1))
-                trackAudio = xt::pad(trackAudio, {{0, 0}, {0, startFrame + noteAudio.shape(1) - trackAudio.shape(1)}});
+            if(startFrame + noteAudio.cols() > trackAudio.cols())
+                trackAudio.conservativeResize(trackAudio.rows(), startFrame + noteAudio.cols());
 
-            xt::view(trackAudio, xt::all(), xt::range(startFrame, startFrame + noteAudio.shape(1))) += noteAudio;
+            trackAudio.middleCols(startFrame, noteAudio.cols()) += noteAudio;
         }
 
         trackAudio *= db_to_amplitude(track.volume);
 
-        if(master.shape(1) < trackAudio.shape(1))
+        if(master.cols() < trackAudio.cols())
             std::swap(master, trackAudio);
 
-        xt::view(master, xt::all(), xt::range(_, trackAudio.shape(1))) += trackAudio;
+        master.leftCols(trackAudio.cols()) += trackAudio;
     }
 
     return master * db_to_amplitude(sequence.volume);
