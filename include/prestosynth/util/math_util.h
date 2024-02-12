@@ -7,27 +7,33 @@
 namespace psynth {
 
 inline float timecents_to_ms(int16_t timecent) {
-    return exp2f(static_cast<float>(timecent) / 1200.0) * 1000.0f;
+    return exp2(static_cast<float>(timecent) / 1200.0) * 1000.0f;
 };
 
 inline float timecents_to_s(int16_t timecent) {
-    return exp2f(static_cast<float>(timecent) / 1200.0);
+    return exp2(static_cast<float>(timecent) / 1200.0);
 };
 
 inline int16_t s_to_timecents(float second) {
-    return 1200 * log2f(second);
+    return 1200 * log2(second);
 };
 
+#ifndef __GNUC__
+inline double exp10(double val) {
+    return pow(10.0, val);
+};
+#endif
+
 inline float db_to_amplitude(float db) {
-    return exp10f(db / 20.0);
+    return exp10(db / 20.0);
 };
 
 inline float cb_to_amplitude(int16_t cb) {
-    return exp10f(static_cast<float>(cb) / 200.0);
+    return exp10(static_cast<float>(cb) / 200.0);
 };
 
 inline int16_t amplitude_to_cb(float amp) {
-    return 200 * log2f(amp);
+    return 200 * log2(amp);
 };
 
 inline uint32_t s_to_frames(float second, uint16_t sampleRate) {
@@ -37,7 +43,7 @@ inline uint32_t s_to_frames(float second, uint16_t sampleRate) {
 namespace math_internal {
 
 inline constexpr float pitch_to_hz(uint8_t pitch) {
-    return 440 * exp2f((static_cast<float>(pitch) - 69) / 12);
+    return 440 * exp2((static_cast<float>(pitch) - 69) / 12);
 };
 
 constexpr std::array<float, 128> make_pitch_hz_lut() {
