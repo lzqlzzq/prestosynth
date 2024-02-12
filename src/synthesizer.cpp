@@ -1,6 +1,9 @@
-#include <algorithm>
-
 #include "prestosynth/synthesizer.h"
+
+#include <algorithm>
+#include <thread>
+#include <mutex>
+
 #include "prestosynth/util/math_util.h"
 
 namespace psynth {
@@ -11,8 +14,8 @@ bool NoteHead::operator<(const NoteHead &other) const {
             (this->duration == other.duration && this->pitch < other.pitch && this->velocity < other.velocity);
 };
 
-Synthesizer::Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality, uint8_t worker_num):
-    sf(PrestoSoundFont(sfPath, sampleRate, quality)), sampleRate(sampleRate) {};
+Synthesizer::Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality, uint8_t workerNum):
+    sf(PrestoSoundFont(sfPath, sampleRate, quality)), sampleRate(sampleRate), workerNum(workerNum) {};
 
 NoteMap Synthesizer::map_notes(const Notes &notes) {
     NoteMap noteMap;
@@ -25,17 +28,16 @@ NoteMap Synthesizer::map_notes(const Notes &notes) {
         if(!noteMap.count(head))
             noteMap[head] = NoteStartPack();
 
-        noteMap[head].push(startFrame);
+        noteMap[head].emplace_back(startFrame);
     }
     return noteMap;
 };
 
-AudioData Synthesizer::render(const Track &track, bool stereo) {
+AudioData Synthesizer::render_single_thread(const Track &track, bool stereo) {
     AudioData trackAudio = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, s_to_frames(track.end(), sampleRate));
 
     for(const auto &pack : map_notes(track.notes)) {
         const auto &head = pack.first;
-        auto startFrames = pack.second;
         AudioData noteAudio = sf.build_note(
             track.preset,
             track.bank,
@@ -44,10 +46,7 @@ AudioData Synthesizer::render(const Track &track, bool stereo) {
             head.duration,
             stereo);
 
-        while(!startFrames.empty()) {
-            uint32_t startFrame = startFrames.front();
-            startFrames.pop();
-
+        for(uint32_t startFrame : pack.second) {
             if(startFrame + noteAudio.cols() > trackAudio.cols())
                 trackAudio.conservativeResize(Eigen::NoChange, startFrame + noteAudio.cols());
 
@@ -56,7 +55,69 @@ AudioData Synthesizer::render(const Track &track, bool stereo) {
     }
 
     return trackAudio * db_to_amplitude(track.volume);
-}
+};
+
+AudioData Synthesizer::render_multi_thread(const Track &track, bool stereo) {
+    NoteMap noteMap = map_notes(track.notes);
+
+    PackedNoteQueue noteQueue(noteMap.size());
+    for(const auto &pack : map_notes(track.notes)) {
+        noteQueue.push(PackedNote{pack.first, pack.second});
+    }
+    
+    NoteAudioQueue audioQueue(noteMap.size());
+    std::mutex condMtx;
+    uint8_t aliveWorkerNum = workerNum;
+    std::vector<std::thread> workers;
+    for(int i = 0; i < workerNum; i++) {
+        workers.emplace_back([&] {
+            while(!noteQueue.empty()) {
+                PackedNote pack;
+                if(noteQueue.try_pop(pack)) {
+                    const auto &head = pack.head;
+                    AudioData noteAudio = sf.build_note(
+                        track.preset,
+                        track.bank,
+                        head.pitch,
+                        head.velocity,
+                        head.duration,
+                        stereo);
+                    audioQueue.push(NoteAudioPack{noteAudio, pack.startPack});
+                }
+            }
+            condMtx.lock();
+            aliveWorkerNum--;
+            condMtx.unlock();
+        });
+    }
+
+    AudioData trackAudio = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, s_to_frames(track.end(), sampleRate));
+    while(!audioQueue.empty() || aliveWorkerNum) {
+        NoteAudioPack pack;
+        if(audioQueue.try_pop(pack)) {
+            AudioData &noteAudio = pack.audio;
+            for(uint32_t startFrame : pack.startPack) {
+                if(startFrame + noteAudio.cols() > trackAudio.cols())
+                    trackAudio.conservativeResize(Eigen::NoChange, startFrame + noteAudio.cols());
+
+                trackAudio.middleCols(startFrame, noteAudio.cols()) += noteAudio;
+            }
+        }
+    }
+
+    for(int i = 0; i < workerNum; i++) {
+        workers[i].join();
+    }
+
+    return trackAudio * db_to_amplitude(track.volume);
+};
+
+AudioData Synthesizer::render(const Track &track, bool stereo) {
+    if(workerNum < 2)
+        return render_single_thread(track, stereo);
+    else
+        return render_multi_thread(track, stereo);
+};
 
 AudioData Synthesizer::render(const Sequence &sequence, bool stereo) {
     AudioData master = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, 1);
