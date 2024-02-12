@@ -15,16 +15,16 @@ namespace psynth {
 
 union SampleHead {
     struct {
-        uint8_t pitchLow = 0;
-        uint8_t velLow = 0;
-        uint8_t pitchHigh = 127;
-        uint8_t velHigh = 127;
+        uint8_t pitchLow;
+        uint8_t velLow;
+        uint8_t pitchHigh;
+        uint8_t velHigh;
     };
     struct {
         uint16_t lowCode;
         uint16_t highCode;
     };
-    uint32_t code;
+    uint32_t code = 0x0000f7f7;
 };
 
 struct SampleAttribute {
