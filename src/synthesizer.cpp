@@ -7,14 +7,14 @@ namespace psynth {
 
 bool NoteHead::operator<(const NoteHead &other) const {
     return (this->duration < other.duration) ||
-            (this->pitch < other.pitch) ||
-            (this->velocity < other.velocity);
+            (this->duration == other.duration && this->pitch < other.pitch) ||
+            (this->duration == other.duration && this->pitch < other.pitch && this->velocity < other.velocity);
 };
 
 Synthesizer::Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality):
     sf(PrestoSoundFont(sfPath, sampleRate, quality)), sampleRate(sampleRate) {};
 
-PackedNoteQueue Synthesizer::map_notes(const Notes &notes) {
+NoteMap Synthesizer::map_notes(const Notes &notes) {
     NoteMap noteMap;
     for(const Note &note : notes) {
         uint32_t startFrame = s_to_frames(note.start, sampleRate);
@@ -22,29 +22,39 @@ PackedNoteQueue Synthesizer::map_notes(const Notes &notes) {
 
         NoteHead head = {durationFrame, note.pitch, note.velocity};
 
-        auto notePack = noteMap.find(head);
-        if(notePack == noteMap.end())
-            noteMap[head] = NoteStartPack({startFrame});
-        else
-            noteMap[head].push(startFrame);
-    }
+        if(!noteMap.count(head))
+            noteMap[head] = NoteStartPack();
 
-    ;
-}
+        noteMap[head].push(startFrame);
+    }
+    return noteMap;
+};
 
 AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stereo) {
     AudioData master = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, 1);
     for(const Track &track : sequence.tracks) {
         AudioData trackAudio = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, s_to_frames(track.end(), sampleRate));
 
-        for(const Note &note : track.notes) {
-            uint32_t startFrame = s_to_frames(note.start, sampleRate);
-            AudioData noteAudio = sf.build_note(track.preset, track.bank, note.pitch, note.velocity, note.duration, stereo);
+        for(const auto &pack : map_notes(track.notes)) {
+            const auto &head = pack.first;
+            auto startFrames = pack.second;
+            AudioData noteAudio = sf.build_note(
+                track.preset,
+                track.bank,
+                head.pitch,
+                head.velocity,
+                head.duration,
+                stereo);
 
-            if(startFrame + noteAudio.cols() > trackAudio.cols())
-                trackAudio.conservativeResize(Eigen::NoChange, startFrame + noteAudio.cols());
+            while(!startFrames.empty()) {
+                uint32_t startFrame = startFrames.front();
+                startFrames.pop();
 
-            trackAudio.middleCols(startFrame, noteAudio.cols()) += noteAudio;
+                if(startFrame + noteAudio.cols() > trackAudio.cols())
+                    trackAudio.conservativeResize(Eigen::NoChange, startFrame + noteAudio.cols());
+
+                trackAudio.middleCols(startFrame, noteAudio.cols()) += noteAudio;
+            }
         }
 
         trackAudio *= db_to_amplitude(track.volume);

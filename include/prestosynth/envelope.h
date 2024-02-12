@@ -31,7 +31,7 @@ public:
     uint32_t releaseFrames = 0;
     float releaseLevel = 0.f;
 
-    VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, float duration);
+    VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, uint32_t durationFrames);
 
     void process(AudioData &sample) const;
 };

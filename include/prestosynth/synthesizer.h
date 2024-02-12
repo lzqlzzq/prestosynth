@@ -41,7 +41,7 @@ private:
     PrestoSoundFont sf;
     uint32_t sampleRate;
 
-    PackedNoteQueue map_notes(const Notes &notes);
+    NoteMap map_notes(const Notes &notes);
 public:
     Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality);
 
