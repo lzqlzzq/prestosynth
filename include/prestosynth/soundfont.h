@@ -6,9 +6,9 @@
 #include <string>
 #include <cstdint>
 #include <mutex>
-#include "soundfont_internal.h"
-#include "util/audio_util.h"
-#include "util/math_util.h"
+#include "prestosynth/soundfont_internal.h"
+#include "prestosynth/util/audio_util.h"
+#include "prestosynth/util/math_util.h"
 
 
 namespace psynth {

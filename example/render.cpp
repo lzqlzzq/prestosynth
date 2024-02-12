@@ -4,8 +4,8 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "sequence.h"
-#include "synthesizer.h"
+#include "prestosynth/sequence.h"
+#include "prestosynth/synthesizer.h"
 
 int main(int argc, char const *argv[])
 {

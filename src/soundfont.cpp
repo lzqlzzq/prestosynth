@@ -1,8 +1,8 @@
 #include <algorithm>
 
-#include "soundfont.h"
-#include "envelope.h"
-#include "util/math_util.h"
+#include "prestosynth/soundfont.h"
+#include "prestosynth/envelope.h"
+#include "prestosynth/util/math_util.h"
 
 #include <iostream>
 namespace psynth {

@@ -1,8 +1,6 @@
-#include "envelope.h"
+#include "prestosynth/envelope.h"
 
 #include <Eigen/Core>
-
-#include <iostream>
 
 namespace psynth {
 

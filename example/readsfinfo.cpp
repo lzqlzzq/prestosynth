@@ -1,4 +1,4 @@
-#include "soundfont_internal.h"
+#include "prestosynth/soundfont_internal.h"
 #include <string>
 #include <iostream>
 #include <cstddef>

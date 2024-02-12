@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "soundfont.h"
+#include "prestosynth/soundfont.h"
 
 int main(int argc, char const *argv[])
 {

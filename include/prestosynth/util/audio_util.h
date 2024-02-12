@@ -4,9 +4,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <Eigen/Core>
-#include "byte_util.h"
+#include "prestosynth/util/byte_util.h"
 #include "samplerate.h"
-#include "wav.h"
+#include "prestosynth/wav.h"
 
 namespace psynth {
 
