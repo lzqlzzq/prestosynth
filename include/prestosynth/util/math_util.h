@@ -2,48 +2,42 @@
 #define _MATH_UTIL_H
 
 #include <array>
-#include <cmath>
+#include "gcem.hpp"
 
 namespace psynth {
 
 inline float timecents_to_ms(int16_t timecent) {
-    return exp2(static_cast<float>(timecent) / 1200.0) * 1000.0f;
+    return gcem::pow(2.f, static_cast<float>(timecent) / 1200.f) * 1000.f;
 };
 
 inline float timecents_to_s(int16_t timecent) {
-    return exp2(static_cast<float>(timecent) / 1200.0);
+    return gcem::pow(2.f, static_cast<float>(timecent) / 1200.f);
 };
 
 inline int16_t s_to_timecents(float second) {
-    return 1200 * log2(second);
+    return 1200 * gcem::log2(second);
 };
-
-#ifndef __GNUC__
-inline double exp10(double val) {
-    return pow(10.0, val);
-};
-#endif
 
 inline float db_to_amplitude(float db) {
-    return exp10(db / 20.0);
+    return gcem::pow(10.f, db / 20.f);
 };
 
 inline float cb_to_amplitude(int16_t cb) {
-    return exp10(static_cast<float>(cb) / 200.0);
+    return gcem::pow(10.f, static_cast<float>(cb) / 200.f);
 };
 
 inline int16_t amplitude_to_cb(float amp) {
-    return 200 * log2(amp);
+    return 200 * gcem::log2(amp);
 };
 
 inline uint32_t s_to_frames(float second, uint16_t sampleRate) {
-    return ceil(second * sampleRate);
+    return gcem::ceil(second * sampleRate);
 };
 
 namespace math_internal {
 
 inline constexpr float pitch_to_hz(uint8_t pitch) {
-    return 440 * exp2((static_cast<float>(pitch) - 69) / 12);
+    return 440 * gcem::pow(2.f, (static_cast<float>(pitch) - 69) / 12);
 };
 
 constexpr std::array<float, 128> make_pitch_hz_lut() {

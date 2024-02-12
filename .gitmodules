@@ -10,3 +10,6 @@
 [submodule "3rdparty/eigen"]
 	path = 3rdparty/eigen
 	url = https://gitlab.com/libeigen/eigen.git
+[submodule "3rdparty/gcem"]
+	path = 3rdparty/gcem
+	url = https://github.com/kthohr/gcem.git
