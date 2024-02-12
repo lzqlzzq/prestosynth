@@ -209,15 +209,13 @@ enum SrcType {
 };
 
 union ModulatorType {
-    /*
     struct {
-        unsigned type: 6;
-        unsigned polarity: 1;
-        unsigned direction: 1;
-        unsigned CCflag: 1;
-        unsigned index: 7;
+        uint8_t type: 6;
+        uint8_t polarity: 1;
+        uint8_t direction: 1;
+        uint8_t CCflag: 1;
+        uint8_t index: 7;
     };
-    */
     uint16_t value;
 };
 static_assert(sizeof(ModulatorType) == 2);
