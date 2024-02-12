@@ -4,7 +4,6 @@
 #include "prestosynth/envelope.h"
 #include "prestosynth/util/math_util.h"
 
-#include <iostream>
 namespace psynth {
 
 inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, sf_internal::GeneratorPack instInfo, const PresetHead pHead, uint16_t smplIdx) {
@@ -29,10 +28,10 @@ inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, 
             static_cast<uint8_t>(instInfo[sf_internal::GeneratorType::SampleModes].sAmount),
 
             smplInfo.sampleRate,
-            smplInfo.startOffset + instInfo[StartAddrsOffset].sAmount + instInfo[StartAddrsCoarseOffset].sAmount * 32768,
-            smplInfo.endOffset + instInfo[EndAddrsOffset].sAmount + instInfo[EndAddrsCoarseOffset].sAmount * 32768,
-            smplInfo.startLoop + instInfo[StartloopAddrsOffset].sAmount + instInfo[StartloopAddrsCoarseOffset].sAmount * 32768,
-            smplInfo.endLoop + instInfo[EndloopAddrsOffset].sAmount + instInfo[EndloopAddrsCoarseOffset].sAmount * 32768,
+            smplInfo.startOffset + std::max(instInfo[StartAddrsOffset].sAmount + instInfo[StartAddrsCoarseOffset].sAmount * 32768, 0) * (sf.version() == 2),
+            smplInfo.endOffset + std::min(instInfo[EndAddrsOffset].sAmount + instInfo[EndAddrsCoarseOffset].sAmount * 32768, 0) * (sf.version() == 2),
+            smplInfo.startLoop + std::max(instInfo[StartloopAddrsOffset].sAmount + instInfo[StartloopAddrsCoarseOffset].sAmount * 32768, 0) * (sf.version() == 2),
+            smplInfo.endLoop + std::min(instInfo[EndloopAddrsOffset].sAmount + instInfo[EndloopAddrsCoarseOffset].sAmount * 32768, 0) * (sf.version() == 2),
 
             std::clamp(static_cast<float>(instInfo[Pan].sAmount) / 100.f, -0.5f, 0.5f),
             // Not sure the unit of InitialAttenuation, the standard seems to be wrong.
