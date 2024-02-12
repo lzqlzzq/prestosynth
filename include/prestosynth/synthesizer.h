@@ -2,7 +2,7 @@
 #define _SYNTHESIZER_H
 
 #include <map>
-#include <queue>
+#include <vector>
 #include <rigtorp/MPMCQueue.h>
 #include "prestosynth/sequence.h"
 #include "prestosynth/soundfont.h"
@@ -18,7 +18,7 @@ struct NoteHead {
     bool operator<(const NoteHead &other) const;
 };
 
-typedef std::queue<uint32_t> NoteStartPack;
+typedef std::vector<uint32_t> NoteStartPack;
 
 struct PackedNote {
     NoteHead head;
@@ -27,7 +27,6 @@ struct PackedNote {
 
 typedef std::map<NoteHead, NoteStartPack> NoteMap;
 typedef rigtorp::mpmc::Queue<PackedNote> PackedNoteQueue;
-const PackedNote END_OF_QUEUE_SIGN {{0, 0, 0}, {}};
 
 struct NoteAudioPack {
     AudioData audio;
@@ -40,10 +39,14 @@ class Synthesizer {
 private:
     PrestoSoundFont sf;
     uint32_t sampleRate;
+    uint8_t workerNum;
 
     NoteMap map_notes(const Notes &notes);
+    AudioData render_single_thread(const Track &track, bool stereo);
+    AudioData render_multi_thread(const Track &track, bool stereo);
+
 public:
-    Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality, uint8_t worker_num = 1);
+    Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality, uint8_t workerNum = 1);
 
     AudioData render(const Track &track, bool stereo);
     AudioData render(const Sequence &sequence, bool stereo);

@@ -9,7 +9,7 @@
 
 int main(int argc, char const *argv[])
 {
-    psynth::Synthesizer synth(std::string("../example/MuseScore_General.sf3"), 44100, 0);
+    psynth::Synthesizer synth(std::string("../example/MuseScore_General.sf3"), 44100, 0, 4);
     psynth::Track track;
     track.preset = 40;
     track.notes = {{0., 1., 67, 100},
