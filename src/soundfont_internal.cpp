@@ -2,6 +2,8 @@
 
 #include "stb_vorbis.c"
 #include "samplerate.h"
+#include <cstdio>
+#include <iostream>
 
 namespace psynth::sf_internal {
 
