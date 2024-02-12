@@ -30,34 +30,38 @@ NoteMap Synthesizer::map_notes(const Notes &notes) {
     return noteMap;
 };
 
+AudioData Synthesizer::render_single_thread(const Track &track, bool stereo) {
+    AudioData trackAudio = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, s_to_frames(track.end(), sampleRate));
+
+    for(const auto &pack : map_notes(track.notes)) {
+        const auto &head = pack.first;
+        auto startFrames = pack.second;
+        AudioData noteAudio = sf.build_note(
+            track.preset,
+            track.bank,
+            head.pitch,
+            head.velocity,
+            head.duration,
+            stereo);
+
+        while(!startFrames.empty()) {
+            uint32_t startFrame = startFrames.front();
+            startFrames.pop();
+
+            if(startFrame + noteAudio.cols() > trackAudio.cols())
+                trackAudio.conservativeResize(Eigen::NoChange, startFrame + noteAudio.cols());
+
+            trackAudio.middleCols(startFrame, noteAudio.cols()) += noteAudio;
+        }
+    }
+
+    return trackAudio * db_to_amplitude(track.volume);
+}
+
 AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stereo) {
     AudioData master = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, 1);
     for(const Track &track : sequence.tracks) {
-        AudioData trackAudio = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, s_to_frames(track.end(), sampleRate));
-
-        for(const auto &pack : map_notes(track.notes)) {
-            const auto &head = pack.first;
-            auto startFrames = pack.second;
-            AudioData noteAudio = sf.build_note(
-                track.preset,
-                track.bank,
-                head.pitch,
-                head.velocity,
-                head.duration,
-                stereo);
-
-            while(!startFrames.empty()) {
-                uint32_t startFrame = startFrames.front();
-                startFrames.pop();
-
-                if(startFrame + noteAudio.cols() > trackAudio.cols())
-                    trackAudio.conservativeResize(Eigen::NoChange, startFrame + noteAudio.cols());
-
-                trackAudio.middleCols(startFrame, noteAudio.cols()) += noteAudio;
-            }
-        }
-
-        trackAudio *= db_to_amplitude(track.volume);
+        AudioData trackAudio = (render_single_thread(track, stereo));
 
         if(master.cols() < trackAudio.cols())
             std::swap(master, trackAudio);
