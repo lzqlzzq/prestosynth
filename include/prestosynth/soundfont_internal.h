@@ -155,6 +155,7 @@ union GenAmount {
         uint8_t highByte;
     };
 };
+static_assert(sizeof(GenAmount) == 2);
 
 struct Generator {
     GeneratorType genOper;
@@ -208,6 +209,7 @@ enum SrcType {
 };
 
 union ModulatorType {
+    /*
     struct {
         unsigned type: 6;
         unsigned polarity: 1;
@@ -215,6 +217,7 @@ union ModulatorType {
         unsigned CCflag: 1;
         unsigned index: 7;
     };
+    */
     uint16_t value;
 };
 static_assert(sizeof(ModulatorType) == 2);
