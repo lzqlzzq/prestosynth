@@ -18,7 +18,7 @@ AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stere
             AudioData noteAudio = sf.build_note(track.preset, track.bank, note.pitch, note.velocity, note.duration, stereo);
 
             if(startFrame + noteAudio.cols() > trackAudio.cols())
-                trackAudio.conservativeResize(trackAudio.rows(), startFrame + noteAudio.cols());
+                trackAudio.conservativeResize(Eigen::NoChange, startFrame + noteAudio.cols());
 
             trackAudio.middleCols(startFrame, noteAudio.cols()) += noteAudio;
         }

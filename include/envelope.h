@@ -33,7 +33,7 @@ public:
 
     VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, float duration);
 
-    void apply(AudioData &sample) const;
+    void process(AudioData &sample) const;
 };
 
 }

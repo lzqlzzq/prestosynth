@@ -74,7 +74,7 @@ release:
     releaseStart = curPosition + remainFrames;
 };
 
-void VolEnvelope::apply(AudioData &sample) const {
+void VolEnvelope::process(AudioData &sample) const {
     // Delay
     if(this->delayFrames)
         sample.leftCols(this->attackStart) = 0;

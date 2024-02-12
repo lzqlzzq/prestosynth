@@ -1,5 +1,5 @@
 # prestosynth
-prestosynth is a software synthesizer with SoundFont, in **presto** speed.
+prestosynth is a software synthesizer based on SoundFont specification, in **presto** speed.
 # Cloning
 For the big object of soundfont, use `GIT_LFS_SKIP_SMUDGE=1` to avoid cloning it:
 ```
