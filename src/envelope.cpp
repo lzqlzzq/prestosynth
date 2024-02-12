@@ -4,8 +4,7 @@
 
 namespace psynth {
 
-VolEnvelope::VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, float duration) {
-    durationFrames = s_to_frames(duration, sampleRate);
+VolEnvelope::VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, uint32_t durationFrames) {
     releaseFrames = s_to_frames(attr.releaseVol, sampleRate);
     noteDurationFrames = durationFrames + releaseFrames;
 

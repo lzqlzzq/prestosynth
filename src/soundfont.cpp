@@ -183,11 +183,11 @@ const Sample PrestoSoundFont::get_raw_sample(const SampleAttribute &sampleAttr, 
     return rawSample;
 };
 
-const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr, uint8_t pitch, uint8_t velocity, float duration) {
+const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr, uint8_t pitch, uint8_t velocity, uint32_t durationFrames) {
     const Sample &rawSample = get_raw_sample(sampleAttr, pitch);
 
     // TODO: Evaluate attenuation by velocity
-    VolEnvelope velEnv(sampleAttr, sampleRate, duration);
+    VolEnvelope velEnv(sampleAttr, sampleRate, durationFrames);
 
     uint32_t noteDurationFrames = velEnv.noteDurationFrames;
     AudioData sample = Eigen::ArrayXXf::Zero(1, noteDurationFrames);
@@ -239,13 +239,13 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
     return sample;
 };
 
-const AudioData PrestoSoundFont::build_note(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity, float duration, bool stereo) {
+const AudioData PrestoSoundFont::build_note(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity, uint32_t durationFrames, bool stereo) {
     const SampleInfoPack sampleInfos = get_sample_info(preset, bank, pitch, velocity);
 
     AudioData outputSample = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, 1);
     uint32_t maxFrames = 0;
     for(auto sampleInfo : sampleInfos) {
-        AudioData thisSample = build_sample(*sampleInfo, pitch, velocity, duration);
+        AudioData thisSample = build_sample(*sampleInfo, pitch, velocity, durationFrames);
 
         if(outputSample.cols() < thisSample.cols()) {
             std::swap(thisSample, outputSample);
