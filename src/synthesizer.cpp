@@ -11,7 +11,7 @@ bool NoteHead::operator<(const NoteHead &other) const {
             (this->duration == other.duration && this->pitch < other.pitch && this->velocity < other.velocity);
 };
 
-Synthesizer::Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality):
+Synthesizer::Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality, uint8_t worker_num):
     sf(PrestoSoundFont(sfPath, sampleRate, quality)), sampleRate(sampleRate) {};
 
 NoteMap Synthesizer::map_notes(const Notes &notes) {
@@ -30,7 +30,7 @@ NoteMap Synthesizer::map_notes(const Notes &notes) {
     return noteMap;
 };
 
-AudioData Synthesizer::render_single_thread(const Track &track, bool stereo) {
+AudioData Synthesizer::render(const Track &track, bool stereo) {
     AudioData trackAudio = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, s_to_frames(track.end(), sampleRate));
 
     for(const auto &pack : map_notes(track.notes)) {
@@ -58,10 +58,10 @@ AudioData Synthesizer::render_single_thread(const Track &track, bool stereo) {
     return trackAudio * db_to_amplitude(track.volume);
 }
 
-AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stereo) {
+AudioData Synthesizer::render(const Sequence &sequence, bool stereo) {
     AudioData master = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, 1);
     for(const Track &track : sequence.tracks) {
-        AudioData trackAudio = (render_single_thread(track, stereo));
+        AudioData trackAudio = (render(track, stereo));
 
         if(master.cols() < trackAudio.cols())
             std::swap(master, trackAudio);
@@ -70,20 +70,6 @@ AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stere
     }
 
     return master * db_to_amplitude(sequence.volume);
-};
-
-AudioData Synthesizer::render(const Track &track, bool stereo, uint8_t workers = 0) {
-    if(!workers || workers == 1) return render_single_thread(track, stereo);
-    // TODO: Implement multithread rendering
-    // Dummy multithreading for now.
-    return render_single_thread(track, stereo);
-};
-
-AudioData Synthesizer::render(const Sequence &sequence, bool stereo, uint8_t workers = 0) {
-    if(!workers || workers == 1) return render_single_thread(sequence, stereo);
-    // TODO: Implement multithread rendering
-    // Dummy multithreading for now.
-    return render_single_thread(sequence, stereo);
 };
 
 }
