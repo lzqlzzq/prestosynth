@@ -43,12 +43,10 @@ private:
 
     NoteMap map_notes(const Notes &notes);
 public:
-    Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality);
+    Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality, uint8_t worker_num = 1);
 
-    AudioData render_single_thread(const Track &track, bool stereo);
-    AudioData render_single_thread(const Sequence &sequence, bool stereo);
-    AudioData render(const Track &track, bool stereo, uint8_t workers);
-    AudioData render(const Sequence &sequence, bool stereo, uint8_t workers);
+    AudioData render(const Track &track, bool stereo);
+    AudioData render(const Sequence &sequence, bool stereo);
 };
 
 }
