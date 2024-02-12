@@ -72,6 +72,13 @@ AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stere
     return master * db_to_amplitude(sequence.volume);
 };
 
+AudioData Synthesizer::render(const Track &track, bool stereo, uint8_t workers = 0) {
+    if(!workers || workers == 1) return render_single_thread(track, stereo);
+    // TODO: Implement multithread rendering
+    // Dummy multithreading for now.
+    return render_single_thread(track, stereo);
+};
+
 AudioData Synthesizer::render(const Sequence &sequence, bool stereo, uint8_t workers = 0) {
     if(!workers || workers == 1) return render_single_thread(sequence, stereo);
     // TODO: Implement multithread rendering
