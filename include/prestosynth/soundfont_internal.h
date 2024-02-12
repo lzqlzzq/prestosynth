@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <mutex>
 #include <mio/mmap.hpp>
-#include "util/audio_util.h"
+#include "prestosynth/util/audio_util.h"
 
 
 namespace psynth::sf_internal {
