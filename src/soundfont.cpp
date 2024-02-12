@@ -200,8 +200,9 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
         if(noteDurationFrames <= rawSample.audio.cols())
             sample = rawSample.audio.leftCols(noteDurationFrames);
         else {
-            sample.conservativeResize(sample.rows(), noteDurationFrames);
+            sample.conservativeResize(Eigen::NoChange, noteDurationFrames);
             sample.leftCols(rawSample.audio.cols()) = rawSample.audio;
+            sample.rightCols(noteDurationFrames - rawSample.audio.cols()) = 0;
         }
     } else if(rawSample.attr.loopMode == sf_internal::LoopMode::Coutinuous) {
         uint32_t loopLength = rawSample.attr.endLoop - rawSample.attr.startLoop;
@@ -233,7 +234,7 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
     }
 
     // Processing volume envelope
-    velEnv.apply(sample);
+    velEnv.process(sample);
 
     return sample;
 };
