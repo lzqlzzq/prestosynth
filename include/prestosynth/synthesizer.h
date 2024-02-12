@@ -47,6 +47,7 @@ public:
 
     AudioData render_single_thread(const Track &track, bool stereo);
     AudioData render_single_thread(const Sequence &sequence, bool stereo);
+    AudioData render(const Track &track, bool stereo, uint8_t workers);
     AudioData render(const Sequence &sequence, bool stereo, uint8_t workers);
 };
 
