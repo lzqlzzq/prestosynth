@@ -4,8 +4,8 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "soundfont_internal.h"
-#include "util/audio_util.h"
+#include "prestosynth/soundfont_internal.h"
+#include "prestosynth/util/audio_util.h"
 
 int main(int argc, char const *argv[])
 {

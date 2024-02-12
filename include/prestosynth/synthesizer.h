@@ -4,9 +4,9 @@
 #include <map>
 #include <queue>
 #include <rigtorp/MPMCQueue.h>
-#include "sequence.h"
-#include "soundfont.h"
-#include "util/audio_util.h"
+#include "prestosynth/sequence.h"
+#include "prestosynth/soundfont.h"
+#include "prestosynth/util/audio_util.h"
 
 namespace psynth {
 
@@ -14,6 +14,8 @@ struct NoteHead {
     uint32_t duration;
     uint8_t pitch;
     uint8_t velocity;
+
+    bool operator<(const NoteHead &other) const;
 };
 
 typedef std::queue<uint32_t> NoteStartPack;
@@ -25,6 +27,7 @@ struct PackedNote {
 
 typedef std::map<NoteHead, NoteStartPack> NoteMap;
 typedef rigtorp::mpmc::Queue<PackedNote> PackedNoteQueue;
+const PackedNote END_OF_QUEUE_SIGN {{0, 0, 0}, {}};
 
 struct NoteAudioPack {
     AudioData audio;
@@ -38,6 +41,7 @@ private:
     PrestoSoundFont sf;
     uint32_t sampleRate;
 
+    PackedNoteQueue map_notes(const Notes &notes);
 public:
     Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality);
 

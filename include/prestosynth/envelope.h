@@ -1,8 +1,8 @@
 #ifndef ENVELOPE_H
 #define ENVELOPE_H
 
-#include "soundfont.h"
-#include "util/audio_util.h"
+#include "prestosynth/soundfont.h"
+#include "prestosynth/util/audio_util.h"
 
 namespace psynth {
 
