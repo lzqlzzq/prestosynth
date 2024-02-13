@@ -69,6 +69,14 @@ VolEnvelope::VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, uint3
 
 release:
     releaseStart = curPosition + remainFrames;
+
+    // Following https://github.com/schellingb/TinySoundFont/blob/master/tsf.h#L1057
+    uint32_t originalReleaseFrames = releaseFrames;
+
+    if(releaseLevel < 1.f) {
+        releaseFrames *= -gcem::log10(-(releaseLevel - 1.f)) / 4.f;
+        noteDurationFrames -= originalReleaseFrames - releaseFrames;
+    }
 };
 
 void VolEnvelope::process(AudioData &sample) const {
