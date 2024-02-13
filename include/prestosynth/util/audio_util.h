@@ -29,7 +29,7 @@ inline AudioData resample_mono(AudioData &sampleData, float ratio, uint8_t quali
 	return resampledData;
 };
 
-inline void write_audio(const std::string &filePath, AudioData &data, uint16_t sampleRate) {
+inline void write_audio(const std::string &filePath, const AudioData &data, uint16_t sampleRate) {
 	WAVE_write(filePath,
 		data.rows(),
 		data.cols(),
