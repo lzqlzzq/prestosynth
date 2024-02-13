@@ -35,3 +35,8 @@ build/
 # Tool chains
 .idea/
 cmake-build-debug/
+
+# BLOBs
+*.sf2
+*.sf3
+
