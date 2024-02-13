@@ -2,41 +2,49 @@
 #define _MATH_UTIL_H
 
 #include <array>
+#include <cassert>
+#include <Eigen/Core>
 #include "gcem.hpp"
 
 namespace psynth {
 
-inline float timecents_to_ms(int16_t timecent) {
+constexpr float timecents_to_ms(int16_t timecent) {
     return gcem::pow(2.f, static_cast<float>(timecent) / 1200.f) * 1000.f;
 };
 
-inline float timecents_to_s(int16_t timecent) {
+constexpr float timecents_to_s(int16_t timecent) {
     return gcem::pow(2.f, static_cast<float>(timecent) / 1200.f);
 };
 
-inline int16_t s_to_timecents(float second) {
+constexpr int16_t s_to_timecents(float second) {
     return 1200 * gcem::log2(second);
 };
 
-inline float db_to_amplitude(float db) {
+constexpr float db_to_amplitude(float db) {
     return gcem::pow(10.f, db / 20.f);
 };
 
-inline float cb_to_amplitude(int16_t cb) {
+constexpr float cb_to_amplitude(int16_t cb) {
     return gcem::pow(10.f, static_cast<float>(cb) / 200.f);
 };
 
-inline int16_t amplitude_to_cb(float amp) {
-    return 200 * gcem::log2(amp);
+constexpr float amplitude_to_cb(float amp) {
+    return 200 * gcem::log10(amp);
 };
 
-inline uint32_t s_to_frames(float second, uint16_t sampleRate) {
+constexpr float amplitude_to_db(float amp) {
+    return 20 * gcem::log10(amp);
+};
+
+constexpr uint32_t s_to_frames(float second, uint16_t sampleRate) {
     return gcem::ceil(second * sampleRate);
 };
 
+constexpr float LOG_EPS = db_to_amplitude(-144.f);
+
 namespace math_internal {
 
-inline constexpr float pitch_to_hz(uint8_t pitch) {
+constexpr float pitch_to_hz(uint8_t pitch) {
     return 440 * gcem::pow(2.f, (static_cast<float>(pitch) - 69) / 12);
 };
 
@@ -54,7 +62,7 @@ constexpr std::array<float, 128> PITCH_HZ_LUT = make_pitch_hz_lut();
 
 }
 
-inline float pitch_to_hz(uint8_t pitch) {
+constexpr float pitch_to_hz(uint8_t pitch) {
     return math_internal::PITCH_HZ_LUT[pitch];
 };
 
