@@ -80,9 +80,13 @@ void VolEnvelope::process(AudioData &sample) const {
     if(this->attackFrames)
         sample.middleCols(this->attackStart, this->attackFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->attackFrames, 0, this->holdLevel);
 
+    // Hold
+    if(this->holdFrames)
+        sample.middleCols(this->holdStart, this->holdFrames).row(0) *= this->holdLevel;
+
     // Decay
     if(this->decayFrames)
-        sample.middleCols(this->decayStart, this->decayFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->decayFrames, 1.f, this->sustainLevel);
+        sample.middleCols(this->decayStart, this->decayFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->decayFrames, this->holdLevel, this->sustainLevel);
 
     // Sustain
     if(this->sustainFrames)
@@ -90,7 +94,7 @@ void VolEnvelope::process(AudioData &sample) const {
 
     // Release
     if(this->releaseFrames)
-        sample.rightCols(this->releaseFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->releaseFrames, this->sustainLevel, 0.f);
+        sample.rightCols(this->releaseFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->releaseFrames, this->releaseLevel, 0.f);
 };
 
 }
