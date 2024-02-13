@@ -1,10 +1,5 @@
 # prestosynth
-prestosynth is a software synthesizer based on SoundFont specification, in **presto** speed.
-# Cloning
-For the big object of soundfont, use `GIT_LFS_SKIP_SMUDGE=1` to avoid cloning it:
-```
-GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/lzqlzzq/prestosynth.git
-```
+prestosynth is a **presto\*** software synthesizer based on SoundFont specification.
 # Limitation
 * **prestosynth** is not intended to fulfill all of `SoundFont` specification but only to provide synthesization in **presto** speed.
 * **prestosynth** is not intended to be a real-time synthesizer but to fully utilize parallelism.
