@@ -4,7 +4,7 @@
 
 namespace psynth {
 
-VolEnvelope::VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, uint32_t durationFrames) {
+void VolEnvelope::_handle_ahdsr_env(const SampleAttribute &attr, uint32_t sampleRate, uint32_t durationFrames) {
     releaseFrames = s_to_frames(attr.releaseVol, sampleRate);
     noteDurationFrames = durationFrames + releaseFrames;
 
@@ -70,6 +70,7 @@ VolEnvelope::VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, uint3
 release:
     releaseStart = curPosition + remainFrames;
 
+    // Sustain Penalty
     // Following https://github.com/schellingb/TinySoundFont/blob/master/tsf.h#L1057
     uint32_t originalReleaseFrames = releaseFrames;
 
@@ -77,6 +78,64 @@ release:
         releaseFrames *= -gcem::log10(-(releaseLevel - 1.f)) / 4.f;
         noteDurationFrames -= originalReleaseFrames - releaseFrames;
     }
+};
+
+void VolEnvelope::_handle_ahd_env(const SampleAttribute &attr, uint32_t sampleRate, uint32_t durationFrames) {
+    sustainLevel = 0.f;
+
+    decayFrames = s_to_frames(attr.decayVol, sampleRate);
+    noteDurationFrames = durationFrames + decayFrames;
+
+    uint32_t remainFrames = durationFrames;
+    uint32_t curPosition = 0;
+
+    delayFrames = attr.delayVol <= 0.001 ? 0 : s_to_frames(attr.delayVol, sampleRate);
+    if(remainFrames <= delayFrames) {
+        delayFrames = remainFrames;
+        attackStart = curPosition + remainFrames;
+
+        goto decay;
+    }
+
+    remainFrames -= delayFrames;
+    curPosition += delayFrames;
+
+    attackStart = curPosition;
+    attackFrames = attr.attackVol <= 0.001 ? 0 :s_to_frames(attr.attackVol, sampleRate);
+    if(remainFrames <= attackFrames) {
+        releaseLevel = static_cast<float>(remainFrames) / static_cast<float>(attackFrames);
+        holdLevel = releaseLevel;
+        attackFrames = remainFrames;
+        holdStart = curPosition + remainFrames;
+
+        goto decay;
+    }
+
+    remainFrames -= attackFrames;
+    curPosition += attackFrames;
+
+    holdStart = curPosition;
+    holdFrames = attr.holdVol <= 0.001 ? 0 : s_to_frames(attr.holdVol, sampleRate);
+    if(remainFrames <= holdFrames) {
+        releaseLevel = 1.f;
+        holdFrames = remainFrames;
+        decayStart = curPosition + remainFrames;
+
+        goto decay;
+    }
+
+    remainFrames -= holdFrames;
+    curPosition += holdFrames;
+
+decay:
+    decayStart = curPosition + remainFrames;
+};
+
+VolEnvelope::VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, uint32_t durationFrames) {
+    if(!attr.sustainVol)
+        _handle_ahd_env(attr, sampleRate, durationFrames);
+    else
+        _handle_ahdsr_env(attr, sampleRate, durationFrames);
 };
 
 void VolEnvelope::process(AudioData &sample) const {
