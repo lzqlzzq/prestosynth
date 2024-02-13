@@ -83,6 +83,6 @@ int main(int argc, char const *argv[])
     sequence.tracks = { track };
     psynth::AudioData audio = synth.render(sequence, true);
 
-    psynth::write_audio("test.wav", audio, 44100);
+    psynth::write_audio("test.wav", audio, 44100, false);
     return 0;
 };

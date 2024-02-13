@@ -3,7 +3,8 @@
 
 #include <cstdio>
 #include <string>
-
+#include <vector>
+#include "samplerate.h"
 
 namespace psynth {
 
@@ -24,15 +25,17 @@ inline void WAVE_write(const std::string &filename,
 	unsigned short num_channels,
 	unsigned long num_samples,
 	int sample_rate,
-	float *data) {
+	float *data,
+	bool writeS16 = false) {
 	size_t chunkSize = 0;
+	uint32_t sizePerSample = writeS16 ? sizeof(int16_t) : sizeof(float);
 
 	FILE *fp = fopen(const_cast<char*>(filename.c_str()), "wb");
 	if (!fp) throw std::ios_base::failure("Cannot write the wav file " + filename + "!");
 
 	// write RIFF header
 	fwrite("RIFF", 1, 4, fp);
-	chunkSize = 36 + sizeof(float) * num_samples * num_channels;
+	chunkSize = 36 + sizePerSample * num_samples * num_channels;
 	fwrite(&chunkSize, 1, 4, fp);
 	fwrite("WAVE", 1, 4, fp);
 
@@ -40,18 +43,27 @@ inline void WAVE_write(const std::string &filename,
 	fwrite("fmt ", 1, 4, fp);
 	chunkSize = 16;
 	fwrite(&chunkSize, 1, 4, fp);
-	FMTChunk fmt = FMT_FLOAT;
+	FMTChunk fmt = writeS16 ? FMT_SHORT : FMT_FLOAT;
 	fmt.channelNum = num_channels;
-	fmt.blockAlign = num_channels * sizeof(float);
+	fmt.blockAlign = num_channels * sizePerSample;
 	fmt.sampleRate = sample_rate;
-	fmt.byteRate = sample_rate * num_channels * sizeof(float);
+	fmt.byteRate = sample_rate * num_channels * sizePerSample;
 	fwrite(&fmt, sizeof(FMTChunk), 1, fp);
 
 	// write data subchunk
 	fwrite("data", 1, 4, fp);
-	chunkSize = sizeof(float) * num_samples * num_channels;
+	chunkSize = sizePerSample * num_samples * num_channels;
 	fwrite(&chunkSize, 1, 4, fp);
-	fwrite(data, sizeof(float), num_samples * num_channels, fp);
+	if(writeS16) {
+		size_t length = num_samples * num_channels;
+		std::vector<int16_t> output(length);
+        src_float_to_short_array(
+            data,
+            output.data(),
+            length);
+        fwrite(output.data(), sizePerSample, length, fp);
+	} else
+		fwrite(data, sizePerSample, num_samples * num_channels, fp);
 
 	fclose(fp);
 };
