@@ -31,6 +31,9 @@ public:
     uint32_t releaseFrames = 0;
     float releaseLevel = 0.f;
 
+    void _handle_ahdsr_env(const SampleAttribute &attr, uint32_t sampleRate, uint32_t durationFrames);
+    void _handle_ahd_env(const SampleAttribute &attr, uint32_t sampleRate, uint32_t durationFrames);
+
     VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, uint32_t durationFrames);
 
     void process(AudioData &sample) const;
