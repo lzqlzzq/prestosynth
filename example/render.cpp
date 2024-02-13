@@ -11,7 +11,7 @@ int main(int argc, char const *argv[])
 {
     psynth::Synthesizer synth(std::string("../example/MuseScore_General.sf3"), 44100, 0, 4);
     psynth::Track track;
-    track.preset = 40;
+    track.preset = 0;
     track.notes = {{0., 1., 67, 100},
                     {1., .5, 67, 100},
                     {1.5, .5, 70, 100},
