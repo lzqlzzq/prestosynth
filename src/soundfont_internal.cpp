@@ -1,6 +1,6 @@
 #include "prestosynth/soundfont_internal.h"
 
-#include "stb_vorbis.c"
+#include "prestosynth/stb_vorbis.h"
 #include "samplerate.h"
 #include <cstdio>
 #include <iostream>
