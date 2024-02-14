@@ -1,16 +1,24 @@
+#ifndef _FILTER_H
+#define _FILTER_H
 
+#include "util/audio_util.h"
+#include "util/convolve.h"
 
 namespace psynth {
 
+constexpr size_t FILTER_ORDER = 5;
+
 class LowPassFilter {
 private:
-	float a1, a2, a3, a4;
+	psynth::Kernel<FILTER_ORDER> kernel;
 public:
-	LowPassFilter(uint16_t cutOffFreq, // In Hz
-		uint16_t sampleRate,  // In Hz
+	LowPassFilter(float cutOffFreq, // In Hz
+		float sampleRate,  // In Hz
 		float Q);  // In Db
 
-	void process(std::vector<float> &signal);
+	void process(AudioData &sample) const;
 };
 
 }
+
+#endif

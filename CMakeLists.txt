@@ -3,15 +3,10 @@ project(prestosynth VERSION 0.1.0 LANGUAGES CXX C)
 
 option(BUILD_TESTING "Avoid libsamplerate to build test." OFF)
 
-set(CMAKE_BUILD_TYPE Release)
-# set(CMAKE_BUILD_TYPE Debug)
-
 if(${CMAKE_BUILD_TYPE} EQUAL "Debug")
 	message(STATUS "Debug building")
 	add_compile_options(-fno-inline -g)
 endif()
-
-# set(XTENSOR_USE_XSIMD 1)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/mio)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libsamplerate)
@@ -37,6 +32,7 @@ target_link_libraries(prestosynth MPMCQueue)
 target_link_libraries(prestosynth gcem)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+	# Examples
 	add_executable(readsfinfo ${CMAKE_CURRENT_SOURCE_DIR}/example/readsfinfo.cpp)
 	target_link_libraries(readsfinfo PRIVATE prestosynth)
 
@@ -48,4 +44,11 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 
 	add_executable(render ${CMAKE_CURRENT_SOURCE_DIR}/example/render.cpp)
 	target_link_libraries(render PRIVATE prestosynth)
+
+	# Tests
+	add_executable(test_conv ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_conv.cpp)
+	target_link_libraries(test_conv PRIVATE prestosynth)
+
+	add_executable(test_filter ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_filter.cpp)
+	target_link_libraries(test_filter PRIVATE prestosynth)
 endif()
