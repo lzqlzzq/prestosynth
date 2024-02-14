@@ -4,30 +4,33 @@
 
 namespace psynth {
 
-LowPassFilter::LowPassFilter(float cutOffFreq, float sampleRate, float Q) {
-    double fc = 2 * M_PI * cutOffFreq / sampleRate;
+LowPassFilter::LowPassFilter(float cutOffFreq, float sampleRate) {
+    // Butterworth
+    double wc = 2 * cutOffFreq / sampleRate;
 
-    // Kaiser window
-    Eigen::VectorXf w(FILTER_ORDER);
-    for (int n = 0; n < FILTER_ORDER; ++n) {
-        double arg = Q * std::sqrt(1 - std::pow((2 * n) / (FILTER_ORDER - 1.0) - 1, 2));
-        w(n) = std::real(std::cyl_bessel_i(0, arg)) / std::real(std::cyl_bessel_i(0, Q));
-    }
+    for(int i = 0; i < FILTER_ORDER; ++i)
+    {
+        int idx = FILTER_ORDER - i;
+        double sincArg = wc * i;
 
-    // Build FIR kernel
-    for(int n = 0; n < FILTER_ORDER; n++) {
-        if(n == FILTER_ORDER / 2)
-            kernel(n) = fc / M_PI;
+        if(i)
+            kernel(idx) = sin(M_PI * sincArg) / (M_PI * sincArg);
         else
-            kernel(n) = std::sin(fc * (n - FILTER_ORDER/2)) / (M_PI * (n - FILTER_ORDER/2));
-        kernel(n) *= Q;
+            kernel(idx) = 1.;
+
+        // Window function
+        kernel(idx) *= pow(cos(wc * (i + 0.5)) / cos(wc/2), 4);
     }
 
-    // Normalize
     kernel /= kernel.sum();
+    std::cout << wc << std::endl;
+    std::cout << kernel << std::endl;
 };
 
 void LowPassFilter::process(AudioData &sample) const {
+    conv1d(sample, kernel);
+    conv1d(sample, kernel);
+    conv1d(sample, kernel);
     conv1d(sample, kernel);
 };
     

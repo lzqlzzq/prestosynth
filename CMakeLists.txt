@@ -3,6 +3,9 @@ project(prestosynth VERSION 0.1.0 LANGUAGES CXX C)
 
 option(BUILD_TESTING "Avoid libsamplerate to build test." OFF)
 
+set(CMAKE_BUILD_TYPE Release)
+# set(CMAKE_BUILD_TYPE Debug)
+
 if(${CMAKE_BUILD_TYPE} EQUAL "Debug")
 	message(STATUS "Debug building")
 	add_compile_options(-fno-inline -g)
