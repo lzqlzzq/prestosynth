@@ -33,7 +33,7 @@ inline FILE* open_file(const std::string& filePath, const std::string& mode) {
 #ifndef _WIN32
     FILE* fp = fopen(filePath.c_str(), mode.c_str());
     if(fp == nullptr) {
-        throw std::runtime_error("File not found file (error:" + std::to_string(err) + "): " + filePath);
+        throw std::runtime_error("File not found file: " + filePath);
     }
 #else   // deal with utf-8 path on windows
     FILE* fp = nullptr;
