@@ -4,6 +4,7 @@
 #include "samplerate.h"
 #include <cstdio>
 #include <iostream>
+#include "prestosynth/util/io_util.h"
 
 namespace psynth::sf_internal {
 
@@ -75,7 +76,12 @@ void SoundFont::read_pdta_chunk(size_t offset, size_t chunkSize) {
 
 SoundFont::SoundFont(const std::string &filepath) {
     std::error_code err;
+
+#ifdef _WIN32
+    handler.map(details::toUtf16(filepath), err);
+#else
     handler.map(filepath, err);
+#endif
 
     if(err)
         throw std::ios_base::failure(std::string("Error mapping file: ") + filepath + std::string("\n") + err.message());
