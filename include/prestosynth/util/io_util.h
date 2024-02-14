@@ -31,9 +31,9 @@ namespace psynth {
 // cross-platform file open with utf-8 support
 inline FILE* open_file(const std::string& filePath, const std::string& mode) {
 #ifndef _WIN32
-    FILE* fp = fopen(path.c_str(), mode.c_str());
+    FILE* fp = fopen(filePath.c_str(), mode.c_str());
     if(fp == nullptr) {
-        throw std::runtime_error(fmt::format("File not found file: {}", path));
+        throw std::runtime_error("File not found file (error:" + std::to_string(err) + "): " + filePath);
     }
 #else   // deal with utf-8 path on windows
     FILE* fp = nullptr;
