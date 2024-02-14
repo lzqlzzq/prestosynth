@@ -58,9 +58,6 @@ AudioData Synthesizer::render_single_thread(const Track &track, bool stereo) {
 };
 
 AudioData Synthesizer::render_multi_thread(const Track &track, bool stereo) {
-    if(!track.notes.size())
-        return Eigen::ArrayXXf::Zero(stereo ? 2 : 1, 1);
-
     NoteMap noteMap = map_notes(track.notes);
 
     PackedNoteQueue noteQueue(noteMap.size());
@@ -125,7 +122,10 @@ AudioData Synthesizer::render(const Track &track, bool stereo) {
 AudioData Synthesizer::render(const Sequence &sequence, bool stereo) {
     AudioData master = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, 1);
     for(const Track &track : sequence.tracks) {
-        AudioData trackAudio = (render(track, stereo));
+        if(!track.notes.size())
+            continue;
+
+        AudioData trackAudio = render(track, stereo);
 
         if(master.cols() < trackAudio.cols())
             std::swap(master, trackAudio);
