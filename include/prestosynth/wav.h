@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "samplerate.h"
+#include "util/io_util.h"
 
 namespace psynth {
 
@@ -30,7 +31,8 @@ inline void WAVE_write(const std::string &filename,
 	size_t chunkSize = 0;
 	uint32_t sizePerSample = writeS16 ? sizeof(int16_t) : sizeof(float);
 
-	FILE *fp = fopen(const_cast<char*>(filename.c_str()), "wb");
+	// FILE *fp = fopen(const_cast<char*>(filename.c_str()), "wb");
+	FILE *fp = open_file(filename, "wb");
 	if (!fp) throw std::ios_base::failure("Cannot write the wav file " + filename + "!");
 
 	// write RIFF header
