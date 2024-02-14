@@ -8,6 +8,13 @@ LowPassFilter::LowPassFilter(float cutOffFreq, float sampleRate) {
     // Butterworth
     double wc = 2 * cutOffFreq / sampleRate;
 
+#ifndef M_PI
+#define M_PI  3.14159265358979323846264f  // from CRC
+#endif
+
+LowPassFilter::LowPassFilter(float cutOffFreq, float sampleRate, float Q) {
+    double fc = 2 * M_PI * cutOffFreq / sampleRate;
+
     for(int i = 0; i < FILTER_ORDER; ++i)
     {
         int idx = FILTER_ORDER - i;
