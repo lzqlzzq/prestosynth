@@ -187,7 +187,13 @@ const Sample PrestoSoundFont::get_raw_sample(const SampleAttribute &sampleAttr, 
 const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr, uint8_t pitch, uint8_t velocity, uint32_t durationFrames) {
     const Sample &rawSample = get_raw_sample(sampleAttr, pitch);
 
-    // TODO: Evaluate attenuation by velocity
+    if((rawSample.attr.loopMode == sf_internal::LoopMode::NoLoop ||
+        rawSample.attr.loopMode == sf_internal::LoopMode::Unused) &&
+        (!sampleAttr.sustainVol)) {
+        uint32_t ahFrames = s_to_frames(sampleAttr.delayVol + sampleAttr.attackVol + sampleAttr.holdVol, sampleRate) + 1;
+        if(durationFrames > ahFrames)
+            durationFrames = ahFrames;
+    }
     VolEnvelope velEnv(sampleAttr, sampleRate, durationFrames);
 
     uint32_t noteDurationFrames = velEnv.noteDurationFrames;
@@ -201,6 +207,7 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
         if(noteDurationFrames <= rawSample.audio.cols())
             sample = rawSample.audio.leftCols(noteDurationFrames);
         else {
+            // TODO: Trimming
             sample.conservativeResize(Eigen::NoChange, noteDurationFrames);
             sample.leftCols(rawSample.audio.cols()) = rawSample.audio;
             sample.rightCols(noteDurationFrames - rawSample.audio.cols()) = 0;
@@ -247,10 +254,12 @@ const AudioData PrestoSoundFont::build_note(uint8_t preset, uint8_t bank, uint8_
     std::vector<AudioData> samples;
     samples.reserve(sampleInfos.size());
     for(auto sampleInfo : sampleInfos) {
-        samples.emplace_back(build_sample(*sampleInfo, pitch, velocity, durationFrames));
+        AudioData thisSample = build_sample(*sampleInfo, pitch, velocity, durationFrames);
 
-        if(samples.back().cols() > maxFrames)
-            maxFrames = samples.back().cols();
+        if(thisSample.cols() > maxFrames)
+            maxFrames = thisSample.cols();
+
+        samples.emplace_back(thisSample);
     }
 
     AudioData outputSample = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, maxFrames);
