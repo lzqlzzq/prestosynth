@@ -27,6 +27,7 @@ struct PackedNote {
 
 typedef std::map<NoteHead, NoteStartPack> NoteMap;
 typedef rigtorp::mpmc::Queue<PackedNote> PackedNoteQueue;
+typedef rigtorp::mpmc::Queue<Track> TrackQueue;
 
 struct NoteAudioPack {
     AudioData audio;
@@ -34,6 +35,7 @@ struct NoteAudioPack {
 };
 
 typedef rigtorp::mpmc::Queue<NoteAudioPack> NoteAudioQueue;
+typedef rigtorp::mpmc::Queue<AudioData> AudioQueue;
 
 class Synthesizer {
 private:
@@ -44,6 +46,8 @@ private:
     NoteMap map_notes(const Notes &notes);
     AudioData render_single_thread(const Track &track, bool stereo);
     AudioData render_multi_thread(const Track &track, bool stereo);
+    AudioData render_single_thread(const Sequence &sequence, bool stereo);
+    AudioData render_multi_thread(const Sequence &sequence, bool stereo);
 
 public:
     Synthesizer(const std::string &sfPath, uint32_t sampleRate, uint8_t quality, uint8_t workerNum = 1);
