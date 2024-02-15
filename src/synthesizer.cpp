@@ -113,13 +113,64 @@ AudioData Synthesizer::render_multi_thread(const Track &track, bool stereo) {
 };
 
 AudioData Synthesizer::render(const Track &track, bool stereo) {
+    return render_single_thread(track, stereo);
+    /*
     if(workerNum < 2)
-        return render_single_thread(track, stereo);
     else
         return render_multi_thread(track, stereo);
+    */
 };
 
-AudioData Synthesizer::render(const Sequence &sequence, bool stereo) {
+AudioData Synthesizer::render_multi_thread(const Sequence &sequence, bool stereo) {
+    AudioQueue audioQueue(sequence.tracks.size());
+    std::mutex condMtx;
+    std::mutex trackMtx;
+    uint8_t trackIdx = 0;
+    uint8_t aliveWorkerNum = workerNum;
+    std::vector<std::thread> workers;
+    for(int i = 0; i < workerNum; i++) {
+        workers.emplace_back([&] {
+            while(trackIdx != sequence.tracks.size()) {
+                Track track;
+                {
+                    std::lock_guard<std::mutex> lk(trackMtx);
+                    if(trackIdx == sequence.tracks.size())
+                        break;
+
+                    track = sequence.tracks[trackIdx];
+                    trackIdx++;
+                }
+                if(!track.notes.size())
+                    continue;
+
+                audioQueue.push(render_single_thread(track, stereo));
+            }
+            std::lock_guard<std::mutex> lk(condMtx);
+            aliveWorkerNum--;
+        });
+    }
+
+    AudioData master = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, 1);
+    while(!audioQueue.empty() || aliveWorkerNum) {
+        std::cout << (int)aliveWorkerNum << std::endl;
+        AudioData trackAudio;
+
+        if(audioQueue.try_pop(trackAudio)) {
+            if(master.cols() < trackAudio.cols())
+                std::swap(master, trackAudio);
+
+            master.leftCols(trackAudio.cols()) += trackAudio;
+        }
+    }
+
+    for(int i = 0; i < workerNum; i++) {
+        workers[i].join();
+    }
+
+    return master * db_to_amplitude(sequence.volume);
+}
+
+AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stereo) {
     AudioData master = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, 1);
     for(const Track &track : sequence.tracks) {
         if(!track.notes.size())
@@ -134,6 +185,13 @@ AudioData Synthesizer::render(const Sequence &sequence, bool stereo) {
     }
 
     return master * db_to_amplitude(sequence.volume);
+};
+
+AudioData Synthesizer::render(const Sequence &sequence, bool stereo) {
+    if(sequence.tracks.size() > 1 && workerNum > 1)
+        return render_multi_thread(sequence, stereo);
+    else
+        return render_single_thread(sequence, stereo);
 };
 
 }
