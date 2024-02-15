@@ -81,6 +81,7 @@ int main(int argc, char const *argv[])
                     {52., 2., 58, 100}};
     psynth::Sequence sequence;
     sequence.tracks = { track };
+    // psynth::AudioData audio = synth.render(sequence, true);
     psynth::AudioData audio = synth.render(sequence, true);
 
     psynth::write_audio("test.wav", audio, 44100, false);
