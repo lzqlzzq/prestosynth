@@ -154,12 +154,11 @@ AudioData Synthesizer::render_multi_thread(const Sequence &sequence, bool stereo
     while(!audioQueue.empty() || aliveWorkerNum) {
         AudioData trackAudio;
 
-        if(audioQueue.try_pop(trackAudio)) {
-            if(master.cols() < trackAudio.cols())
-                std::swap(master, trackAudio);
+        audioQueue.pop(trackAudio);
+        if(master.cols() < trackAudio.cols())
+            std::swap(master, trackAudio);
 
-            master.leftCols(trackAudio.cols()) += trackAudio;
-        }
+        master.leftCols(trackAudio.cols()) += trackAudio;
     }
 
     for(int i = 0; i < workerNum; i++) {
