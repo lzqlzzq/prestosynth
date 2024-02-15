@@ -1,5 +1,7 @@
 #include <algorithm>
 
+#include <chrono>
+#include <iostream>
 #include "prestosynth/soundfont.h"
 #include "prestosynth/envelope.h"
 #include "prestosynth/util/math_util.h"
@@ -241,25 +243,24 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
 const AudioData PrestoSoundFont::build_note(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity, uint32_t durationFrames, bool stereo) {
     const SampleInfoPack sampleInfos = get_sample_info(preset, bank, pitch, velocity);
 
-    AudioData outputSample = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, 1);
     uint32_t maxFrames = 0;
+    std::vector<AudioData> samples;
+    samples.reserve(sampleInfos.size());
     for(auto sampleInfo : sampleInfos) {
-        AudioData thisSample = build_sample(*sampleInfo, pitch, velocity, durationFrames);
+        samples.emplace_back(build_sample(*sampleInfo, pitch, velocity, durationFrames));
 
-        if(outputSample.cols() < thisSample.cols()) {
-            std::swap(thisSample, outputSample);
+        if(samples.back().cols() > maxFrames)
+            maxFrames = samples.back().cols();
+    }
 
-            if(stereo) {
-                outputSample.conservativeResize(2, outputSample.cols());
-                outputSample.row(1) = outputSample.row(0);
-            }
-        }
-
+    AudioData outputSample = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, maxFrames);
+    for(int i = 0; i < sampleInfos.size(); i++) {
+        AudioData &sample = samples[i];
         if(stereo) {
-            outputSample.row(0).leftCols(thisSample.cols()) += thisSample.row(0) * (0.5 - sampleInfo->pan);
-            outputSample.row(1).leftCols(thisSample.cols()) += thisSample.row(0) * (0.5 + sampleInfo->pan);
+            outputSample.row(0).leftCols(sample.cols()) += sample.row(0) * (0.5 - sampleInfos[i]->pan);
+            outputSample.row(1).leftCols(sample.cols()) += sample.row(0) * (0.5 + sampleInfos[i]->pan);
         } else {
-            outputSample.leftCols(thisSample.cols()) += thisSample;
+            outputSample.leftCols(sample.cols()) += sample;
         }
     }
 
