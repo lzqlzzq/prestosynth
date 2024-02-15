@@ -7,33 +7,42 @@ namespace psynth {
 #ifndef M_PI
 #define M_PI  3.14159265358979323846264f  // from CRC
 #endif
+#define SQRT2 1.4142135623730950488
 
 LowPassFilter::LowPassFilter(float cutOffFreq, float sampleRate) {
-    // Butterworth
-    double wc = 2 * cutOffFreq / sampleRate;
+    double QcRaw  = (M_PI * cutOffFreq) / sampleRate;
+    double QcWarp = std::tan(QcRaw);
 
-    for(int i = 0; i < FILTER_ORDER; ++i)
-    {
-        int idx = FILTER_ORDER - i;
-        double sincArg = wc * i;
+    double gain = 1 / (1+SQRT2/QcWarp + 2/(QcWarp*QcWarp));
 
-        if(i)
-            kernel(idx) = sin(M_PI * sincArg) / (M_PI * sincArg);
-        else
-            kernel(idx) = 1.;
+    by[2] = (1 - SQRT2/QcWarp + 2/(QcWarp*QcWarp)) * gain;
+    by[1] = (2 - 2 * 2/(QcWarp*QcWarp)) * gain;
+    by[0] = 1;
 
-        // Window function
-        kernel(idx) *= pow(cos(wc * (i + 0.5)) / cos(wc/2), 4);
-    }
-
-    kernel /= kernel.sum();
+    ax[0] = 1 * gain;
+    ax[1] = 2 * gain;
+    ax[2] = 1 * gain;
 };
 
 void LowPassFilter::process(AudioData &sample) const {
-    conv1d(sample, kernel);
-    conv1d(sample, kernel);
-    conv1d(sample, kernel);
-    conv1d(sample, kernel);
+    float xv[3];
+    float yv[3];
+
+    for(int r = 0; r < sample.rows(); ++r)
+    {
+       for(int c = 0; c < sample.cols(); c++)
+       {
+           xv[2] = xv[1]; xv[1] = xv[0];
+           xv[0] = sample(r, c);
+           yv[2] = yv[1]; yv[1] = yv[0];
+
+           yv[0] =   (ax[0] * xv[0] + ax[1] * xv[1] + ax[2] * xv[2]
+                        - by[1] * yv[0]
+                        - by[2] * yv[1]);
+
+           sample.row(r).col(c) = yv[0];
+       }
+    }
 };
     
 
