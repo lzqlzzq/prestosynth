@@ -152,7 +152,6 @@ AudioData Synthesizer::render_multi_thread(const Sequence &sequence, bool stereo
 
     AudioData master = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, 1);
     while(!audioQueue.empty() || aliveWorkerNum) {
-        std::cout << (int)aliveWorkerNum << std::endl;
         AudioData trackAudio;
 
         if(audioQueue.try_pop(trackAudio)) {
