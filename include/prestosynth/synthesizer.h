@@ -27,7 +27,6 @@ struct PackedNote {
 
 typedef std::map<NoteHead, NoteStartPack> NoteMap;
 typedef rigtorp::mpmc::Queue<PackedNote> PackedNoteQueue;
-typedef rigtorp::mpmc::Queue<Track> TrackQueue;
 
 struct NoteAudioPack {
     AudioData audio;
