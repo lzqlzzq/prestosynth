@@ -28,6 +28,7 @@ inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, 
         }, {
             smplInfo.originalPitch,
             static_cast<uint8_t>(instInfo[sf_internal::GeneratorType::SampleModes].sAmount),
+            instInfo[ScaleTuning].uAmount == 100,
 
             smplInfo.sampleRate,
             smplInfo.startOffset + std::max(instInfo[StartAddrsOffset].sAmount + instInfo[StartAddrsCoarseOffset].sAmount * 32768, 0) * (sf.version() == 2),
@@ -145,7 +146,7 @@ const Sample PrestoSoundFont::get_raw_sample(const SampleAttribute &sampleAttr, 
     if(cachedSample != sampleCache.end())
         return cachedSample->second;
 
-    AudioData monoSample = sf.sample(
+    AudioData sample = sf.sample(
         sampleAttr.startOffset,
         sampleAttr.endOffset - sampleAttr.startOffset,
         sampleAttr.sampleRate,
@@ -153,31 +154,30 @@ const Sample PrestoSoundFont::get_raw_sample(const SampleAttribute &sampleAttr, 
         quality);
 
     // TODO: Use better pitch shifting algorithm
-    float shiftRatio = pitch_to_hz(sampleAttr.pitch) / pitch_to_hz(pitch) / sampleAttr.tune;
-    if(sampleAttr.pitch != pitch || sampleAttr.tune) {
-        monoSample = resample_mono(
-            monoSample,
+    float shiftRatio = 1.f;
+    if(sampleAttr.scaleTuning || (sampleAttr.pitch != pitch || sampleAttr.tune)) {
+        shiftRatio = pitch_to_hz(sampleAttr.pitch) / pitch_to_hz(pitch) / sampleAttr.tune;
+        sample = resample_mono(
+            sample,
             shiftRatio,
             0);  // Using linear interpolation for now
     }
 
-    monoSample *= sampleAttr.attenuation;
+    sample *= sampleAttr.attenuation;
 
     Sample rawSample {
         sampleAttr,
-        monoSample
+        sample
     };
 
     shiftRatio *= static_cast<float>(sampleRate) / static_cast<float>(sampleAttr.sampleRate);
     if(sf.version() == 2) {
         rawSample.attr.startLoop -= rawSample.attr.startOffset;
         rawSample.attr.endLoop -= rawSample.attr.startOffset;
-        rawSample.attr.startLoop *= shiftRatio;
-        rawSample.attr.endLoop *= shiftRatio;
-    } else {
-        rawSample.attr.startLoop *= shiftRatio;
-        rawSample.attr.endLoop *= shiftRatio;
     }
+
+    rawSample.attr.startLoop *= shiftRatio;
+    rawSample.attr.endLoop *= shiftRatio;
     rawSample.attr.sampleRate = sampleRate;
     rawSample.attr.pitch = pitch;
 

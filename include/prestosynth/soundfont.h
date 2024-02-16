@@ -30,6 +30,7 @@ union SampleHead {
 struct SampleAttribute {
     uint8_t pitch = 0;
     uint8_t loopMode = 0;
+    bool scaleTuning = true;
 
     uint32_t sampleRate = 0;
     uint32_t startOffset = 0;
