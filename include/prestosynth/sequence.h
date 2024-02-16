@@ -23,6 +23,7 @@ struct Track {
     uint8_t preset = 0;                   // General MIDI Instrument Number
     uint8_t bank = 0;                     // General MIDI Bank Number
     float volume = 0.f;                   // Track volume in dB
+    float pan = 0.f;                      // -0.5 for all left, 0.5 for all right
 
     Notes notes;
 
