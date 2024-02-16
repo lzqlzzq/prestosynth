@@ -11,9 +11,10 @@ prestosynth is a **presto\*** software synthesizer based on SoundFont specificat
 - [x] Sample Looping
 - [x] Envelope Generator
 - [x] Gain Amplifier
-# To be Implemented
-- [ ] Better, variable pitch shifting (OLA-based or delay-line based algorithm)
-- [ ] Basic LPF
-- [ ] Basic LFO
+# TODO
+- [ ] Better, variable pitch shifting
+- [ ] Correct Release caculation
+- [ ] LPF
+- [ ] LFO
 - [ ] Basic Reverb effect
 - [ ] Basic Chrous effect
