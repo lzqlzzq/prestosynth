@@ -169,20 +169,33 @@ AudioData Synthesizer::render_multi_thread(const Sequence &sequence, bool stereo
 }
 
 AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stereo) {
-    AudioData master = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, 1);
+    AudioData master = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, s_to_frames(sequence.end(), sampleRate));
     for(const Track &track : sequence.tracks) {
         if(!track.notes.size())
             continue;
 
-        AudioData trackAudio = render(track, stereo);
+        float volume = db_to_amplitude(sequence.volume + track.volume);
 
-        if(master.cols() < trackAudio.cols())
-            std::swap(master, trackAudio);
+        for(const auto &pack : map_notes(track.notes)) {
+            const auto &head = pack.first;
+            AudioData noteAudio = sf.build_note(
+                track.preset,
+                track.bank,
+                head.pitch,
+                head.velocity,
+                head.duration,
+                stereo) * volume;
 
-        master.leftCols(trackAudio.cols()) += trackAudio;
+            for(uint32_t startFrame : pack.second) {
+                if(startFrame + noteAudio.cols() > master.cols())
+                    master.conservativeResize(Eigen::NoChange, startFrame + noteAudio.cols());
+
+                master.middleCols(startFrame, noteAudio.cols()) += noteAudio;
+            }
+        }
     }
 
-    return master * db_to_amplitude(sequence.volume);
+    return master;
 };
 
 AudioData Synthesizer::render(const Sequence &sequence, bool stereo) {
