@@ -139,29 +139,65 @@ VolEnvelope::VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, uint3
 };
 
 void VolEnvelope::process(AudioData &sample) const {
+    uint32_t remainFrames = sample.cols();
     // Delay
-    if(this->delayFrames)
-        sample.leftCols(this->attackStart) = 0;
+    if(this->delayFrames && remainFrames) {
+        if(remainFrames < this->delayFrames) {
+            sample.leftCols(remainFrames) = 0;
+            return ;
+        } else
+            sample.leftCols(this->attackStart) = 0;
+    }
+    remainFrames -= this->delayFrames;
 
     // Attack
-    if(this->attackFrames)
-        sample.middleCols(this->attackStart, this->attackFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->attackFrames, 0, this->holdLevel);
+    if(this->attackFrames && remainFrames) {
+        if(remainFrames < this->attackFrames) {
+            sample.middleCols(this->attackStart, remainFrames).row(0) *= Eigen::ArrayXf::LinSpaced(remainFrames, 0, this->holdLevel * (static_cast<float>(remainFrames) / static_cast<float>(this->attackFrames)));
+            return ;
+        } else
+            sample.middleCols(this->attackStart, this->attackFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->attackFrames, 0, this->holdLevel);
+    }
+    remainFrames -= this->attackFrames;
 
     // Hold
-    if(this->holdFrames)
-        sample.middleCols(this->holdStart, this->holdFrames).row(0) *= this->holdLevel;
+    if(this->holdFrames && remainFrames) {
+        if(remainFrames < this->holdFrames) {
+            sample.middleCols(this->holdStart, remainFrames).row(0) *= this->holdLevel;
+            return ;
+        } else
+            sample.middleCols(this->holdStart, this->holdFrames).row(0) *= this->holdLevel;
+    }
+    remainFrames -= this->holdFrames;
 
     // Decay
-    if(this->decayFrames)
-        sample.middleCols(this->decayStart, this->decayFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->decayFrames, this->holdLevel, this->sustainLevel);
+    if(this->decayFrames && remainFrames) {
+        if(remainFrames < this->decayFrames)  {
+            sample.middleCols(this->decayStart, remainFrames).row(0) *= Eigen::ArrayXf::LinSpaced(remainFrames, this->holdLevel, this->sustainLevel + (this->holdLevel - this->sustainLevel) * (static_cast<float>(remainFrames) / static_cast<float>(this->decayFrames)));
+            return ;
+        } else
+            sample.middleCols(this->decayStart, this->decayFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->decayFrames, this->holdLevel, this->sustainLevel);
+    }
+    remainFrames -= this->decayFrames;
 
     // Sustain
-    if(this->sustainFrames)
-        sample.middleCols(this->sustainStart, this->sustainFrames) *= sustainLevel;
+    if(this->sustainFrames && remainFrames) {
+        if(remainFrames < this->sustainFrames) {
+            sample.middleCols(this->sustainStart, remainFrames) *= sustainLevel;
+            return;
+        } else
+            sample.middleCols(this->sustainStart, this->sustainFrames) *= sustainLevel;
+    }
+    remainFrames -= this->sustainFrames;
 
     // Release
-    if(this->releaseFrames)
-        sample.rightCols(this->releaseFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->releaseFrames, this->releaseLevel, 0.f);
+    if(this->releaseFrames && remainFrames) {
+        if(remainFrames < this->releaseFrames) {
+            sample.rightCols(remainFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->releaseFrames, this->releaseLevel, this->releaseLevel * (static_cast<float>(remainFrames) / static_cast<float>(this->releaseFrames)));
+        }
+        else
+            sample.rightCols(this->releaseFrames).row(0) *= Eigen::ArrayXf::LinSpaced(this->releaseFrames, this->releaseLevel, 0.f);
+    }
 };
 
 }

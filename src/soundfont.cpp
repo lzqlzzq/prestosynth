@@ -197,7 +197,7 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
     VolEnvelope velEnv(sampleAttr, sampleRate, durationFrames);
 
     uint32_t noteDurationFrames = velEnv.noteDurationFrames;
-    AudioData sample = Eigen::ArrayXXf::Zero(1, noteDurationFrames);
+    AudioData sample;
 
     // Processing loop
     if(rawSample.attr.loopMode == sf_internal::LoopMode::NoLoop ||
@@ -207,12 +207,11 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
         if(noteDurationFrames <= rawSample.audio.cols())
             sample = rawSample.audio.leftCols(noteDurationFrames);
         else {
-            // TODO: Trimming
-            sample.conservativeResize(Eigen::NoChange, noteDurationFrames);
-            sample.leftCols(rawSample.audio.cols()) = rawSample.audio;
-            sample.rightCols(noteDurationFrames - rawSample.audio.cols()) = 0;
+            noteDurationFrames = rawSample.audio.cols();
+            sample = rawSample.audio;
         }
     } else if(rawSample.attr.loopMode == sf_internal::LoopMode::Coutinuous) {
+        sample = Eigen::ArrayXXf::Zero(1, noteDurationFrames);
         uint32_t loopLength = rawSample.attr.endLoop - rawSample.attr.startLoop;
         uint32_t curOffset = rawSample.attr.endLoop;
 
@@ -227,6 +226,7 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
         }
         sample.rightCols(sample.cols() - curOffset) = rawSample.audio.middleCols(rawSample.attr.startLoop, sample.cols() - curOffset);
     } else if(rawSample.attr.loopMode == sf_internal::LoopMode::ToEnd) {
+        sample = Eigen::ArrayXXf::Zero(1, noteDurationFrames);
         uint32_t loopLength = rawSample.attr.endLoop - rawSample.attr.startLoop;
         uint32_t curOffset = rawSample.attr.endLoop;
 
