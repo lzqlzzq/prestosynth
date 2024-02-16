@@ -35,6 +35,7 @@ NoteMap Synthesizer::map_notes(const Notes &notes) {
 
 AudioData Synthesizer::render_single_thread(const Track &track, bool stereo) {
     AudioData trackAudio = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, s_to_frames(track.end(), sampleRate));
+    float volume = db_to_amplitude(track.volume);
 
     for(const auto &pack : map_notes(track.notes)) {
         const auto &head = pack.first;
@@ -44,7 +45,12 @@ AudioData Synthesizer::render_single_thread(const Track &track, bool stereo) {
             head.pitch,
             head.velocity,
             head.duration,
-            stereo) * db_to_amplitude(track.volume);
+            stereo);
+        if(stereo) {
+            noteAudio.row(0) *= volume * (0.5 - track.pan);
+            noteAudio.row(1) *= volume * (0.5 + track.pan);
+        } else 
+            noteAudio *=  volume;
 
         for(uint32_t startFrame : pack.second) {
             if(startFrame + noteAudio.cols() > trackAudio.cols())
@@ -59,6 +65,7 @@ AudioData Synthesizer::render_single_thread(const Track &track, bool stereo) {
 
 AudioData Synthesizer::render_multi_thread(const Track &track, bool stereo) {
     NoteMap noteMap = map_notes(track.notes);
+    float volume = db_to_amplitude(track.volume);
 
     PackedNoteQueue noteQueue(noteMap.size());
     for(const auto &pack : map_notes(track.notes)) {
@@ -82,6 +89,12 @@ AudioData Synthesizer::render_multi_thread(const Track &track, bool stereo) {
                         head.velocity,
                         head.duration,
                         stereo);
+                    if(stereo) {
+                        noteAudio.row(0) *= volume * (0.5 - track.pan);
+                        noteAudio.row(1) *= volume * (0.5 + track.pan);
+                    } else 
+                        noteAudio *=  volume;
+
                     audioQueue.push(NoteAudioPack{noteAudio, pack.startPack});
                 }
             }
@@ -109,7 +122,7 @@ AudioData Synthesizer::render_multi_thread(const Track &track, bool stereo) {
         workers[i].join();
     }
 
-    return trackAudio * db_to_amplitude(track.volume);
+    return trackAudio;
 };
 
 AudioData Synthesizer::render(const Track &track, bool stereo) {
@@ -179,7 +192,13 @@ AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stere
                 head.pitch,
                 head.velocity,
                 head.duration,
-                stereo) * volume;
+                stereo);
+            if(stereo) {
+                noteAudio.row(0) *= volume * (0.5 - track.pan);
+                noteAudio.row(1) *= volume * (0.5 + track.pan);
+            } else 
+                noteAudio *=  volume;
+
 
             for(uint32_t startFrame : pack.second) {
                 if(startFrame + noteAudio.cols() > master.cols())
