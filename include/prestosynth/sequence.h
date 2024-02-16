@@ -39,6 +39,9 @@ struct Track {
             return lhs.end() < rhs.end();
         })->end();
     };
+    inline size_t note_num() const {
+        return notes.size();
+    };
 };
 
 typedef std::vector<Track> Tracks;
@@ -60,6 +63,13 @@ struct Sequence {
             return lhs.end() < rhs.end();
         })->end();
     };
+    inline size_t note_num() const {
+        size_t n = 0;
+        for(const auto &track : tracks) {
+            n += track.note_num();
+        }
+        return n;
+    }
 };
 
 }

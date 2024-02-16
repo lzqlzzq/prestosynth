@@ -3,10 +3,13 @@
 #include <algorithm>
 #include <thread>
 #include <mutex>
+#include <random>
 
 #include "prestosynth/util/math_util.h"
 
 namespace psynth {
+
+static std::default_random_engine randomEngine(114514);
 
 bool NoteHead::operator<(const NoteHead &other) const {
     return (this->duration < other.duration) ||
@@ -30,6 +33,11 @@ NoteMap Synthesizer::map_notes(const Notes &notes) {
 
         noteMap[head].emplace_back(startFrame);
     }
+
+    for(auto &item : noteMap) {
+        std::shuffle(item.second.begin(), item.second.begin(), randomEngine);
+    }
+
     return noteMap;
 };
 
@@ -107,14 +115,14 @@ AudioData Synthesizer::render_multi_thread(const Track &track, bool stereo) {
     AudioData trackAudio = Eigen::ArrayXXf::Zero(stereo ? 2 : 1, s_to_frames(track.end(), sampleRate));
     while(!audioQueue.empty() || aliveWorkerNum) {
         NoteAudioPack pack;
-        if(audioQueue.try_pop(pack)) {
-            AudioData &noteAudio = pack.audio;
-            for(uint32_t startFrame : pack.startPack) {
-                if(startFrame + noteAudio.cols() > trackAudio.cols())
-                    trackAudio.conservativeResize(Eigen::NoChange, startFrame + noteAudio.cols());
+        audioQueue.pop(pack);
 
-                trackAudio.middleCols(startFrame, noteAudio.cols()) += noteAudio;
-            }
+        AudioData &noteAudio = pack.audio;
+        for(uint32_t startFrame : pack.startPack) {
+            if(startFrame + noteAudio.cols() > trackAudio.cols())
+                trackAudio.conservativeResize(Eigen::NoChange, startFrame + noteAudio.cols());
+
+            trackAudio.middleCols(startFrame, noteAudio.cols()) += noteAudio;
         }
     }
 
