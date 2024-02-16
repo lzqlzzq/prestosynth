@@ -66,6 +66,14 @@ constexpr float pitch_to_hz(uint8_t pitch) {
     return math_internal::PITCH_HZ_LUT[pitch];
 };
 
+constexpr float semitone_to_tune(float semitones) {
+    return gcem::pow(2.f, semitones / 12.f);
+};
+
+inline float cent_to_tune(float cent) {
+    return gcem::pow(2.f, cent / 1200.f);
+};
+
 }
 
 #endif

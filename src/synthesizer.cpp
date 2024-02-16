@@ -44,7 +44,7 @@ AudioData Synthesizer::render_single_thread(const Track &track, bool stereo) {
             head.pitch,
             head.velocity,
             head.duration,
-            stereo);
+            stereo) * db_to_amplitude(track.volume);
 
         for(uint32_t startFrame : pack.second) {
             if(startFrame + noteAudio.cols() > trackAudio.cols())
@@ -54,7 +54,7 @@ AudioData Synthesizer::render_single_thread(const Track &track, bool stereo) {
         }
     }
 
-    return trackAudio * db_to_amplitude(track.volume);
+    return trackAudio;
 };
 
 AudioData Synthesizer::render_multi_thread(const Track &track, bool stereo) {
@@ -114,11 +114,6 @@ AudioData Synthesizer::render_multi_thread(const Track &track, bool stereo) {
 
 AudioData Synthesizer::render(const Track &track, bool stereo) {
     return render_single_thread(track, stereo);
-    /*
-    if(workerNum < 2)
-    else
-        return render_multi_thread(track, stereo);
-    */
 };
 
 AudioData Synthesizer::render_multi_thread(const Sequence &sequence, bool stereo) {

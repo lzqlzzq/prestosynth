@@ -35,6 +35,8 @@ inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, 
             smplInfo.startLoop + std::max(instInfo[StartloopAddrsOffset].sAmount + instInfo[StartloopAddrsCoarseOffset].sAmount * 32768, 0) * (sf.version() == 2),
             smplInfo.endLoop + std::min(instInfo[EndloopAddrsOffset].sAmount + instInfo[EndloopAddrsCoarseOffset].sAmount * 32768, 0) * (sf.version() == 2),
 
+            cent_to_tune(std::clamp(static_cast<float>(smplInfo.pitchCorrection + instInfo[FineTune].sAmount) + static_cast<float>(instInfo[CoarseTune].sAmount) * 100.f, -120.f, 120.f)),
+
             std::clamp(static_cast<float>(instInfo[Pan].sAmount) / 100.f, -0.5f, 0.5f),
             // Not sure the unit of InitialAttenuation, the standard seems to be wrong.
             // std::clamp(db_to_amplitude(-static_cast<float>(instInfo[InitialAttenuation].sAmount) / 25.f), db_to_amplitude(-144.f), 1.f),
@@ -151,8 +153,8 @@ const Sample PrestoSoundFont::get_raw_sample(const SampleAttribute &sampleAttr, 
         quality);
 
     // TODO: Use better pitch shifting algorithm
-    float shiftRatio = pitch_to_hz(sampleAttr.pitch) / pitch_to_hz(pitch);
-    if(sampleAttr.pitch != pitch) {
+    float shiftRatio = pitch_to_hz(sampleAttr.pitch) / pitch_to_hz(pitch) / sampleAttr.tune;
+    if(sampleAttr.pitch != pitch || sampleAttr.tune) {
         monoSample = resample_mono(
             monoSample,
             shiftRatio,
