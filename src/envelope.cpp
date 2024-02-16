@@ -74,12 +74,13 @@ release:
     // Following https://github.com/schellingb/TinySoundFont/blob/master/tsf.h#L1057
     uint32_t originalReleaseFrames = releaseFrames;
 
-    if(releaseLevel < 1.f) {
+    if(releaseLevel && releaseLevel < 1.f) {
         releaseFrames *= -gcem::log10(-(releaseLevel - 1.f)) / 4.f;
         noteDurationFrames -= originalReleaseFrames - releaseFrames;
     }
 };
 
+/*
 void VolEnvelope::_handle_ahd_env(const SampleAttribute &attr, uint32_t sampleRate, uint32_t durationFrames) {
     sustainLevel = 0.f;
 
@@ -130,12 +131,10 @@ void VolEnvelope::_handle_ahd_env(const SampleAttribute &attr, uint32_t sampleRa
 decay:
     decayStart = curPosition + remainFrames;
 };
+*/
 
 VolEnvelope::VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, uint32_t durationFrames) {
-    if(!attr.sustainVol)
-        _handle_ahd_env(attr, sampleRate, durationFrames);
-    else
-        _handle_ahdsr_env(attr, sampleRate, durationFrames);
+    _handle_ahdsr_env(attr, sampleRate, durationFrames);
 };
 
 void VolEnvelope::process(AudioData &sample) const {
