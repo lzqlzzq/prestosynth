@@ -1,5 +1,8 @@
 # prestosynth
 `prestosynth` is a **presto\*** software synthesizer based on SoundFont specification.
+```
+\*) **presto**\[Italian\]: as fast as you can
+```
 # Motivation
 As the rapid progress of symbolic music generation, there is a growing need of fast server-side audio rendering from symbolic music. I proposed `prestosynth` following these principles:
 * For the environment of servers, it should be self-contained and portable.
