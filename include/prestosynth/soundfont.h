@@ -38,10 +38,14 @@ struct SampleAttribute {
     uint32_t startLoop = 0;
     uint32_t endLoop = 0;
 
-    float tune = 1.f;
-
     float pan = 0.f;
     float attenuation = 1.f;
+
+    float tune = 1.f;
+
+    float filterFc = 13500.f;
+    float filterQ = 1.f;
+
     float delayVol = timecents_to_s(-12000);
     float attackVol = timecents_to_s(-12000);
     float holdVol = timecents_to_s(-12000);

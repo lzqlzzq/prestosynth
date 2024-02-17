@@ -3,6 +3,7 @@
 
 #include "util/audio_util.h"
 #include "util/convolve.h"
+#include "soundfont.h"
 
 namespace psynth {
 
@@ -11,9 +12,7 @@ private:
     double ax[3];
     double by[3];
 public:
-	LowPassFilter(float cutOffFreq, // In Hz
-		float sampleRate,  // In Hz
-		float resonance);  // In db
+	LowPassFilter(const SampleAttribute &attr, float sampleRate);
 
 	void process(AudioData &sample) const;
 };

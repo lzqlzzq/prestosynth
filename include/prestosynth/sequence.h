@@ -47,7 +47,7 @@ struct Track {
 typedef std::vector<Track> Tracks;
 
 struct Sequence {
-    float volume = -20.f;                 // Master volume in dB
+    float volume = 0.f;                 // Master volume in dB
 
     Tracks tracks;
 

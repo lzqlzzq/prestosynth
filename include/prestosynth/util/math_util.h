@@ -70,8 +70,12 @@ constexpr float semitone_to_tune(float semitones) {
     return gcem::pow(2.f, semitones / 12.f);
 };
 
-inline float cent_to_tune(float cent) {
+constexpr float cent_to_tune(float cent) {
     return gcem::pow(2.f, cent / 1200.f);
+};
+
+constexpr float abscent_to_hz(float absCent) {
+    return 8.176f * gcem::pow(2.f, absCent / 1200.f);
 };
 
 }

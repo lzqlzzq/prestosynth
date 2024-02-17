@@ -4,6 +4,7 @@
 #include <iostream>
 #include "prestosynth/soundfont.h"
 #include "prestosynth/envelope.h"
+#include "prestosynth/filter.h"
 #include "prestosynth/util/math_util.h"
 
 namespace psynth {
@@ -36,12 +37,16 @@ inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, 
             smplInfo.startLoop + std::max(instInfo[StartloopAddrsOffset].sAmount + instInfo[StartloopAddrsCoarseOffset].sAmount * 32768, 0) * (sf.version() == 2),
             smplInfo.endLoop + std::min(instInfo[EndloopAddrsOffset].sAmount + instInfo[EndloopAddrsCoarseOffset].sAmount * 32768, 0) * (sf.version() == 2),
 
-            cent_to_tune(std::clamp(static_cast<float>(smplInfo.pitchCorrection + instInfo[FineTune].sAmount) + static_cast<float>(instInfo[CoarseTune].sAmount) * 100.f, -120.f, 120.f)),
-
             std::clamp(static_cast<float>(instInfo[Pan].sAmount) / 100.f, -0.5f, 0.5f),
             // Not sure the unit of InitialAttenuation, the standard seems to be wrong.
             // std::clamp(db_to_amplitude(-static_cast<float>(instInfo[InitialAttenuation].sAmount) / 25.f), db_to_amplitude(-144.f), 1.f),
             std::clamp(1.f - static_cast<float>(instInfo[InitialAttenuation].sAmount) / 1000.f, 0.f, 1.f),
+
+            cent_to_tune(std::clamp(static_cast<float>(smplInfo.pitchCorrection + instInfo[FineTune].sAmount) + static_cast<float>(instInfo[CoarseTune].sAmount) * 100.f, -120.f, 120.f)),
+
+            std::clamp(abscent_to_hz(instInfo[InitialFilterFc].sAmount), 8.176f, 13500.f),
+            std::clamp(cb_to_amplitude(instInfo[InitialFilterQ].sAmount), cb_to_amplitude(0.f), cb_to_amplitude(96.f)),
+
             std::clamp(timecents_to_s(instInfo[DelayVolEnv].sAmount), 0.001f, 20.f),
             std::clamp(timecents_to_s(instInfo[AttackVolEnv].sAmount), 0.001f, 100.f),
             std::clamp(timecents_to_s(instInfo[HoldVolEnv].sAmount), 0.001f, 20.f),
@@ -242,6 +247,10 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
         }
         sample.rightCols(noteDurationFrames) = rawSample.audio.middleCols(rawSample.attr.startLoop, noteDurationFrames);
     }
+
+    // Processing LPF
+    LowPassFilter filter(sampleAttr, sampleRate);
+    filter.process(sample);
 
     // Processing volume envelope
     velEnv.process(sample);

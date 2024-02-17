@@ -4,7 +4,7 @@
 
 namespace psynth {
 
-void VolEnvelope::_handle_ahdsr_env(const SampleAttribute &attr, uint32_t sampleRate, uint32_t durationFrames) {
+void VolEnvelope::_handle_ahdsr_env(const SampleAttribute &attr, float sampleRate, uint32_t durationFrames) {
     releaseFrames = s_to_frames(attr.releaseVol, sampleRate);
     noteDurationFrames = durationFrames + releaseFrames;
 
@@ -133,7 +133,7 @@ decay:
 };
 */
 
-VolEnvelope::VolEnvelope(const SampleAttribute &attr, uint32_t sampleRate, uint32_t durationFrames) {
+VolEnvelope::VolEnvelope(const SampleAttribute &attr, float sampleRate, uint32_t durationFrames) {
     _handle_ahdsr_env(attr, sampleRate, durationFrames);
 };
 
