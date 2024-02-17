@@ -9,22 +9,32 @@ namespace psynth {
 #endif
 #define SQRT2 1.4142135623730950488
 
-LowPassFilter::LowPassFilter(float cutOffFreq, float sampleRate) {
-    double QcRaw  = (M_PI * cutOffFreq) / sampleRate;
-    double QcWarp = std::tan(QcRaw);
+// Following https://github.com/cycfi/q/blob/develop/q_lib/include/q/fx/biquad.hpp#L72
+LowPassFilter::LowPassFilter(float cutOffFreq, float sampleRate, float resonance) {
+    q = db_to_amplitude(q);
+    q = q - (1.f - 1.f / SQRT2) / (1 + 6 * (q - 1));
 
-    double gain = 1 / (1+SQRT2/QcWarp + 2/(QcWarp*QcWarp));
+    float omega = 2 * M_PI * cutOffFreq / sampleRate;
+    float cosVal = std::cos(omega);
+    float alpha = std::sin(omega) / (2.f * q);
 
-    by[2] = (1 - SQRT2/QcWarp + 2/(QcWarp*QcWarp)) * gain;
-    by[1] = (2 - 2 * 2/(QcWarp*QcWarp)) * gain;
-    by[0] = 1;
+    float a0 = 1.f + alpha;
+    float a1 = -2.f * cosVal;
+    float a2 = 1.f - alpha;
+    float b1 = 1.f - cosVal;
+    float b0 = b1 / 2.f;
+    float b2 = b1 / 2.f;
 
-    ax[0] = 1 * gain;
-    ax[1] = 2 * gain;
-    ax[2] = 1 * gain;
+    by[1] = a1 / a0;
+    by[2] = a2 / a0;
+    ax[0] = b0 / a0;
+    ax[1] = b1 / a0;
+    ax[2] = b2 / a0;
 };
 
 void LowPassFilter::process(AudioData &sample) const {
+    // TODO: Using Eigen expressions to optimize
+
     float xv[3];
     float yv[3];
 
