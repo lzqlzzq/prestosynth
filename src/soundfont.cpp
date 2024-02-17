@@ -250,7 +250,7 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
 
     // Processing LPF
     LowPassFilter filter(sampleAttr, sampleRate);
-    filter.process(sample);
+    // filter.process(sample);
 
     // Processing volume envelope
     velEnv.process(sample);
