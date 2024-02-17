@@ -53,6 +53,13 @@ inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, 
             std::clamp(timecents_to_s(instInfo[DecayVolEnv].sAmount), 0.001f, 100.f),
             std::clamp(1.f - static_cast<float>(instInfo[SustainVolEnv].sAmount) / 1000.f, 0.f, 1.f),
             std::clamp(timecents_to_s(instInfo[ReleaseVolEnv].sAmount), 0.001f, 100.f),
+
+            std::clamp(timecents_to_s(instInfo[DelayModEnv].sAmount), 0.001f, 20.f),
+            std::clamp(timecents_to_s(instInfo[AttackModEnv].sAmount), 0.001f, 100.f),
+            std::clamp(timecents_to_s(instInfo[HoldModEnv].sAmount), 0.001f, 20.f),
+            std::clamp(timecents_to_s(instInfo[DecayModEnv].sAmount), 0.001f, 100.f),
+            std::clamp(1.f - static_cast<float>(instInfo[SustainModEnv].sAmount) / 1000.f, 0.f, 1.f),
+            std::clamp(timecents_to_s(instInfo[ReleaseModEnv].sAmount), 0.001f, 100.f),
         }
     });
 }
@@ -248,6 +255,16 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &attr, uint8
         attr.decayVol,
         attr.sustainVol,
         attr.releaseVol,
+        sampleRate,
+        durationFrames);
+    Envelope modEnv(
+        attr.loopMode,
+        attr.delayMod,
+        attr.attackMod,
+        attr.holdMod,
+        attr.decayMod,
+        attr.sustainMod,
+        attr.releaseMod,
         sampleRate,
         durationFrames);
     LowPassFilter filter(

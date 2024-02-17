@@ -52,6 +52,13 @@ struct SampleAttribute {
     float decayVol = timecents_to_s(-12000);
     float sustainVol = 1.f;
     float releaseVol = timecents_to_s(-12000);
+
+    float delayMod = timecents_to_s(-12000);
+    float attackMod = timecents_to_s(-12000);
+    float holdMod = timecents_to_s(-12000);
+    float decayMod = timecents_to_s(-12000);
+    float sustainMod = 1.f;
+    float releaseMod = timecents_to_s(-12000);
 };
 
 struct SampleInfo {
