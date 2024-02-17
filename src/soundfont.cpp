@@ -16,7 +16,7 @@ inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, 
     const auto &smplInfo = sf.shdr(smplIdx);
 
     for(int i = 0; i < ADDITIVE_GEN_IDXS.size(); ++i) {
-        if(presetInfo[ADDITIVE_GEN_IDXS[i]].sAmount != defaultGenPack[ADDITIVE_GEN_IDXS[i]].sAmount)
+        // if(presetInfo[ADDITIVE_GEN_IDXS[i]].sAmount != defaultGenPack[ADDITIVE_GEN_IDXS[i]].sAmount)
             instInfo[ADDITIVE_GEN_IDXS[i]].sAmount += presetInfo[ADDITIVE_GEN_IDXS[i]].sAmount;
     }
 
@@ -250,7 +250,8 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &attr, uint8
         attr.releaseVol,
         sampleRate,
         durationFrames);
-    LowPassFilter filter(attr.filterFc,
+    LowPassFilter filter(
+        attr.filterFc,
         attr.filterQ,
         sampleRate);
 

@@ -13,6 +13,7 @@ private:
     float ax[3];
     float by[3];
 public:
+	void set_params(float filterFc, float filterQ, float sampleRate);
 	LowPassFilter(float filterFc, float filterQ, float sampleRate);
 
 	void process(AudioData &sample) const;

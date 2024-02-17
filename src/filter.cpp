@@ -9,8 +9,7 @@ namespace psynth {
 #endif
 #define SQRT2 1.4142135623730950488
 
-// Following https://github.com/cycfi/q/blob/develop/q_lib/include/q/fx/biquad.hpp#L72
-LowPassFilter::LowPassFilter(float filterFc, float filterQ, float sampleRate) {
+void LowPassFilter::set_params(float filterFc, float filterQ, float sampleRate) {
     if(filterFc >= abscent_to_hz(13499.f))
         return ;
 
@@ -34,6 +33,11 @@ LowPassFilter::LowPassFilter(float filterFc, float filterQ, float sampleRate) {
     ax[0] = b0 / a0;
     ax[1] = b1 / a0;
     ax[2] = b2 / a0;
+}
+
+// Following https://github.com/cycfi/q/blob/develop/q_lib/include/q/fx/biquad.hpp#L72
+LowPassFilter::LowPassFilter(float filterFc, float filterQ, float sampleRate) {
+    set_params(filterFc, filterQ, sampleRate);
 };
 
 void LowPassFilter::process(AudioData &sample) const {
