@@ -10,11 +10,10 @@ namespace psynth {
 #define SQRT2 1.4142135623730950488
 
 // Following https://github.com/cycfi/q/blob/develop/q_lib/include/q/fx/biquad.hpp#L72
-LowPassFilter::LowPassFilter(float cutOffFreq, float sampleRate, float resonance) {
-    q = db_to_amplitude(q);
-    q = q - (1.f - 1.f / SQRT2) / (1 + 6 * (q - 1));
+LowPassFilter::LowPassFilter(const SampleAttribute &attr, float sampleRate) {
+    float q = attr.filterQ - (1.f - 1.f / SQRT2) / (1 + 6 * (attr.filterQ - 1));
 
-    float omega = 2 * M_PI * cutOffFreq / sampleRate;
+    float omega = 2 * M_PI * attr.filterFc / sampleRate;
     float cosVal = std::cos(omega);
     float alpha = std::sin(omega) / (2.f * q);
 
