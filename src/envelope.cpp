@@ -6,29 +6,29 @@ namespace psynth {
 
 Envelope::Envelope(
     sf_internal::LoopMode loopMode,
-    float delayVol,
-    float attackVol,
-    float holdVol,
-    float decayVol,
-    float sustainVol,
-    float releaseVol,
+    float delay,
+    float attack,
+    float hold,
+    float decay,
+    float sustain,
+    float release,
     float sampleRate,
     uint32_t durationFrames) {
     if((loopMode == sf_internal::LoopMode::NoLoop ||
         loopMode == sf_internal::LoopMode::Unused) &&
-        (!sustainVol)) {
-        uint32_t ahFrames = s_to_frames(delayVol + attackVol + holdVol, sampleRate) + 1;
+        (!sustain)) {
+        uint32_t ahFrames = s_to_frames(delay + attack + hold, sampleRate) + 1;
         if(durationFrames > ahFrames)
             durationFrames = ahFrames;
     }
 
-    releaseFrames = s_to_frames(releaseVol, sampleRate);
+    releaseFrames = s_to_frames(release, sampleRate);
     noteDurationFrames = durationFrames + releaseFrames;
 
     uint32_t remainFrames = durationFrames;
     uint32_t curPosition = 0;
 
-    delayFrames = delayVol <= 0.001 ? 0 : s_to_frames(delayVol, sampleRate);
+    delayFrames = delay <= 0.001 ? 0 : s_to_frames(delay, sampleRate);
     if(remainFrames <= delayFrames) {
         delayFrames = remainFrames;
         attackStart = curPosition + remainFrames;
@@ -40,7 +40,7 @@ Envelope::Envelope(
     curPosition += delayFrames;
 
     attackStart = curPosition;
-    attackFrames = attackVol <= 0.001 ? 0 :s_to_frames(attackVol, sampleRate);
+    attackFrames = attack <= 0.001 ? 0 :s_to_frames(attack, sampleRate);
     if(remainFrames <= attackFrames) {
         releaseLevel = static_cast<float>(remainFrames) / static_cast<float>(attackFrames);
         holdLevel = releaseLevel;
@@ -54,7 +54,7 @@ Envelope::Envelope(
     curPosition += attackFrames;
 
     holdStart = curPosition;
-    holdFrames = holdVol <= 0.001 ? 0 : s_to_frames(holdVol, sampleRate);
+    holdFrames = hold <= 0.001 ? 0 : s_to_frames(hold, sampleRate);
     if(remainFrames <= holdFrames) {
         releaseLevel = 1.f;
         holdFrames = remainFrames;
@@ -67,7 +67,7 @@ Envelope::Envelope(
     curPosition += holdFrames;
 
     decayStart = curPosition;
-    decayFrames = delayVol <= 0.001 ? 0 : s_to_frames(decayVol, sampleRate);
+    decayFrames = delay <= 0.001 ? 0 : s_to_frames(decay, sampleRate);
     if(remainFrames <= decayFrames) {
         releaseLevel = 1.f - static_cast<float>(remainFrames) / static_cast<float>(decayFrames);
         sustainLevel = releaseLevel;

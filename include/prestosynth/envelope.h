@@ -33,12 +33,12 @@ public:
 
     Envelope(
         sf_internal::LoopMode loopMode,
-        float delayVol,
-        float attackVol,
-        float holdVol,
+        float delay,
+        float attack,
+        float hold,
         float decayvol,
-        float sustainVol,
-        float releaseVol,
+        float sustain,
+        float release,
         float sampleRate,
         uint32_t durationFrames);
 

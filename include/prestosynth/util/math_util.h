@@ -24,8 +24,8 @@ constexpr float db_to_amplitude(float db) {
     return gcem::pow(10.f, db / 20.f);
 };
 
-constexpr float cb_to_amplitude(int16_t cb) {
-    return gcem::pow(10.f, static_cast<float>(cb) / 200.f);
+constexpr float cb_to_amplitude(float cb) {
+    return gcem::pow(10.f, cb / 200.f);
 };
 
 constexpr float amplitude_to_cb(float amp) {
@@ -36,7 +36,7 @@ constexpr float amplitude_to_db(float amp) {
     return 20 * gcem::log10(amp);
 };
 
-constexpr uint32_t s_to_frames(float second, uint16_t sampleRate) {
+constexpr uint32_t s_to_frames(float second, float sampleRate) {
     return gcem::ceil(second * sampleRate);
 };
 
