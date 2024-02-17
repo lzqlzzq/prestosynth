@@ -44,7 +44,7 @@ inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, 
 
             cent_to_tune(std::clamp(static_cast<float>(smplInfo.pitchCorrection + instInfo[FineTune].sAmount) + static_cast<float>(instInfo[CoarseTune].sAmount) * 100.f, -120.f, 120.f)),
 
-            std::clamp(abscent_to_hz(instInfo[InitialFilterFc].sAmount), 8.176f, 13500.f),
+            std::clamp(abscent_to_hz(instInfo[InitialFilterFc].sAmount), 20.f, 40000.f),
             std::clamp(cb_to_amplitude(instInfo[InitialFilterQ].sAmount), cb_to_amplitude(0.f), cb_to_amplitude(96.f)),
 
             std::clamp(timecents_to_s(instInfo[DelayVolEnv].sAmount), 0.001f, 20.f),

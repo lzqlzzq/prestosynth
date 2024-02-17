@@ -9,6 +9,7 @@ namespace psynth {
 
 class LowPassFilter {
 private:
+	bool active = false;
     float ax[3];
     float by[3];
 public:

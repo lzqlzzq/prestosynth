@@ -11,6 +11,11 @@ namespace psynth {
 
 // Following https://github.com/cycfi/q/blob/develop/q_lib/include/q/fx/biquad.hpp#L72
 LowPassFilter::LowPassFilter(const SampleAttribute &attr, float sampleRate) {
+    if(attr.filterFc > 0.499 * sampleRate)
+        return ;
+
+    active = true;
+
     float q = attr.filterQ - (1.f - 1.f / SQRT2) / (1 + 6 * (attr.filterQ - 1));
 
     float omega = 2 * M_PI * attr.filterFc / sampleRate;
@@ -33,6 +38,8 @@ LowPassFilter::LowPassFilter(const SampleAttribute &attr, float sampleRate) {
 
 void LowPassFilter::process(AudioData &sample) const {
     // TODO: Using Eigen expressions to optimize
+    if(!active)
+        return ;
 
     float xv[3];
     float yv[3];
