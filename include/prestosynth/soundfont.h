@@ -29,7 +29,7 @@ union SampleHead {
 
 struct SampleAttribute {
     uint8_t pitch = 0;
-    uint8_t loopMode = 0;
+    sf_internal::LoopMode loopMode = sf_internal::LoopMode::NoLoop;
     bool scaleTuning = true;
 
     uint32_t sampleRate = 0;
@@ -43,7 +43,7 @@ struct SampleAttribute {
 
     float tune = 1.f;
 
-    float filterFc = 13500.f;
+    float filterFc = abscent_to_hz(13500.f);
     float filterQ = 1.f;
 
     float delayVol = timecents_to_s(-12000);

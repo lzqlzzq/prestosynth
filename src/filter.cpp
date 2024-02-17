@@ -10,15 +10,15 @@ namespace psynth {
 #define SQRT2 1.4142135623730950488
 
 // Following https://github.com/cycfi/q/blob/develop/q_lib/include/q/fx/biquad.hpp#L72
-LowPassFilter::LowPassFilter(const SampleAttribute &attr, float sampleRate) {
-    if(attr.filterFc > 19000.f)
+LowPassFilter::LowPassFilter(float filterFc, float filterQ, float sampleRate) {
+    if(filterFc >= abscent_to_hz(13499.f))
         return ;
 
     active = true;
 
-    float q = attr.filterQ - (1.f - 1.f / SQRT2) / (1 + 6 * (attr.filterQ - 1));
+    float q = filterQ - (1.f - 1.f / SQRT2) / (1 + 6 * (filterQ - 1));
 
-    float omega = 2 * M_PI * attr.filterFc / sampleRate;
+    float omega = 2 * M_PI * filterFc / sampleRate;
     float cosVal = std::cos(omega);
     float alpha = std::sin(omega) / (2.f * q);
 

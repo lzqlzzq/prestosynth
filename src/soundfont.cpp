@@ -28,7 +28,7 @@ inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, 
             instInfo[Velocity].sAmount == -1 ? std::min(presetInfo[VelRange].highByte, instInfo[VelRange].highByte) : static_cast<uint8_t>(instInfo[Velocity].sAmount)
         }, {
             smplInfo.originalPitch,
-            static_cast<uint8_t>(instInfo[sf_internal::GeneratorType::SampleModes].sAmount),
+            static_cast<LoopMode>(instInfo[sf_internal::GeneratorType::SampleModes].sAmount),
             instInfo[ScaleTuning].uAmount == 100,
 
             smplInfo.sampleRate,
@@ -191,22 +191,8 @@ const Sample PrestoSoundFont::get_raw_sample(const SampleAttribute &sampleAttr, 
     return rawSample;
 };
 
-const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr, uint8_t pitch, uint8_t velocity, uint32_t durationFrames) {
-    const Sample &rawSample = get_raw_sample(sampleAttr, pitch);
-
-    if((rawSample.attr.loopMode == sf_internal::LoopMode::NoLoop ||
-        rawSample.attr.loopMode == sf_internal::LoopMode::Unused) &&
-        (!sampleAttr.sustainVol)) {
-        uint32_t ahFrames = s_to_frames(sampleAttr.delayVol + sampleAttr.attackVol + sampleAttr.holdVol, sampleRate) + 1;
-        if(durationFrames > ahFrames)
-            durationFrames = ahFrames;
-    }
-    VolEnvelope velEnv(sampleAttr, sampleRate, durationFrames);
-
-    uint32_t noteDurationFrames = velEnv.noteDurationFrames;
+inline AudioData loop(const Sample &rawSample, uint32_t noteDurationFrames) {
     AudioData sample;
-
-    // Processing loop
     if(rawSample.attr.loopMode == sf_internal::LoopMode::NoLoop ||
         rawSample.attr.loopMode == sf_internal::LoopMode::Unused ||
         noteDurationFrames <= rawSample.attr.endLoop) {
@@ -248,12 +234,36 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &sampleAttr,
         sample.rightCols(noteDurationFrames) = rawSample.audio.middleCols(rawSample.attr.startLoop, noteDurationFrames);
     }
 
+    return sample;
+}
+
+const AudioData PrestoSoundFont::build_sample(const SampleAttribute &attr, uint8_t pitch, uint8_t velocity, uint32_t durationFrames) {
+    const Sample &rawSample = get_raw_sample(attr, pitch);
+
+    Envelope velEnv(
+        attr.loopMode,
+        attr.delayVol,
+        attr.attackVol,
+        attr.holdVol,
+        attr.decayVol,
+        attr.sustainVol,
+        attr.releaseVol,
+        sampleRate,
+        durationFrames);
+    LowPassFilter filter(attr.filterFc,
+        attr.filterQ,
+        sampleRate);
+
+    uint32_t noteDurationFrames = velEnv.noteDurationFrames;
+
+    // Processing loop
+    AudioData sample = loop(rawSample, noteDurationFrames);
+
     // Processing LPF
-    LowPassFilter filter(sampleAttr, sampleRate);
     filter.process(sample);
 
     // Processing volume envelope
-    velEnv.process(sample);
+    sample.row(0) *= velEnv(sample.cols());
 
     return sample;
 };

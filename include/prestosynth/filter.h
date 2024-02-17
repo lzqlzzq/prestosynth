@@ -13,7 +13,7 @@ private:
     float ax[3];
     float by[3];
 public:
-	LowPassFilter(const SampleAttribute &attr, float sampleRate);
+	LowPassFilter(float filterFc, float filterQ, float sampleRate);
 
 	void process(AudioData &sample) const;
 };
