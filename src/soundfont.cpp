@@ -272,7 +272,7 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &attr, uint8
         attr.filterQ,
         sampleRate);
 
-    uint32_t noteDurationFrames = velEnv.noteDurationFrames;
+    uint32_t noteDurationFrames = std::max(velEnv.noteDurationFrames, modEnv.noteDurationFrames);
 
     // Processing loop
     AudioData sample = loop(rawSample, noteDurationFrames);
