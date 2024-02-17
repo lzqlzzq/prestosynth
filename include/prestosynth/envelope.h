@@ -6,7 +6,7 @@
 
 namespace psynth {
 
-class VolEnvelope {
+class Envelope {
 public:
     uint32_t noteDurationFrames;
     uint32_t durationFrames;
@@ -31,12 +31,18 @@ public:
     uint32_t releaseFrames = 0;
     float releaseLevel = 0.f;
 
-    void _handle_ahdsr_env(const SampleAttribute &attr, float sampleRate, uint32_t durationFrames);
-    // void _handle_ahd_env(const SampleAttribute &attr, float sampleRate, uint32_t durationFrames);
+    Envelope(
+        sf_internal::LoopMode loopMode,
+        float delayVol,
+        float attackVol,
+        float holdVol,
+        float decayvol,
+        float sustainVol,
+        float releaseVol,
+        float sampleRate,
+        uint32_t durationFrames);
 
-    VolEnvelope(const SampleAttribute &attr, float sampleRate, uint32_t durationFrames);
-
-    void process(AudioData &sample) const;
+    AudioData operator()(uint32_t length) const;
 };
 
 }
