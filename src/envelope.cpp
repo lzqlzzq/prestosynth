@@ -6,11 +6,11 @@ namespace psynth {
 
 Envelope::Envelope(
     sf_internal::LoopMode loopMode,
-    float sustainVol,
     float delayVol,
     float attackVol,
     float holdVol,
     float decayVol,
+    float sustainVol,
     float releaseVol,
     float sampleRate,
     uint32_t durationFrames) {
