@@ -11,7 +11,8 @@ namespace psynth {
 
 // Following https://github.com/cycfi/q/blob/develop/q_lib/include/q/fx/biquad.hpp#L72
 LowPassFilter::LowPassFilter(const SampleAttribute &attr, float sampleRate) {
-    if(attr.filterFc > 0.499 * sampleRate)
+    std::cout << attr.filterFc << std::endl;
+    if(attr.filterFc > 19000.f)
         return ;
 
     active = true;
