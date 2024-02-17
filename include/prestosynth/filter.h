@@ -9,8 +9,8 @@ namespace psynth {
 
 class LowPassFilter {
 private:
-    double ax[3];
-    double by[3];
+    float ax[3];
+    float by[3];
 public:
 	LowPassFilter(const SampleAttribute &attr, float sampleRate);
 

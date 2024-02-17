@@ -207,7 +207,6 @@ AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stere
             } else 
                 noteAudio *=  volume;
 
-
             for(uint32_t startFrame : pack.second) {
                 if(startFrame + noteAudio.cols() > master.cols())
                     master.conservativeResize(Eigen::NoChange, startFrame + noteAudio.cols());

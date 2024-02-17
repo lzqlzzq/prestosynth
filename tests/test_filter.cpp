@@ -8,7 +8,7 @@ int main(int argc, char const *argv[]) {
     psynth::write_audio("white_noise.wav", noise, 44100);
     psynth::SampleAttribute attr;
     attr.filterFc = 1700.f;
-    attr.filterQ = 1.58489;
+    attr.filterQ = 2.f;
 
     psynth::LowPassFilter lpf(attr, 44100);
 
