@@ -6,7 +6,7 @@ int main(int argc, char const *argv[]) {
 
     psynth::write_audio("white_noise.wav", noise, 44100);
 
-    psynth::LowPassFilter lpf(4000, 44100);
+    psynth::LowPassFilter lpf(12000, 44100, 6.f);
 
     lpf.process(noise);
     psynth::write_audio("filtered1.wav", noise, 44100);

@@ -6,16 +6,14 @@
 
 namespace psynth {
 
-constexpr size_t FILTER_ORDER = 7;
-
 class LowPassFilter {
 private:
-	psynth::Kernel<FILTER_ORDER + 1> kernel;
     double ax[3];
     double by[3];
 public:
 	LowPassFilter(float cutOffFreq, // In Hz
-		float sampleRate);  // In Hz
+		float sampleRate,  // In Hz
+		float resonance);  // In db
 
 	void process(AudioData &sample) const;
 };
