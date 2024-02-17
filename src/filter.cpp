@@ -37,7 +37,7 @@ void LowPassFilter::process(AudioData &sample) const {
     float xv[3];
     float yv[3];
 
-    for(int r = 0; r < sample.rows(); ++r)
+    for(int r = 0; r < sample.rows(); r++)
     {
        for(int c = 0; c < sample.cols(); c++)
        {
@@ -49,7 +49,7 @@ void LowPassFilter::process(AudioData &sample) const {
                         - by[1] * yv[0]
                         - by[2] * yv[1]);
 
-           sample.row(r).col(c) = yv[0];
+           sample(r, c) = yv[0];
        }
     }
 };
