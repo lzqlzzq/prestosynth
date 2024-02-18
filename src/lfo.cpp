@@ -1,4 +1,4 @@
-#include "lfo.h"
+#include "prestosynth/lfo.h"
 #include "util/math_util.h"
 
 namespace psynth {
