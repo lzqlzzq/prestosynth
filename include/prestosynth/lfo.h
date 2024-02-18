@@ -1,3 +1,6 @@
+#ifndef _LFO_H
+#define _LFO_H
+
 #include "util/audio_util.h"
 
 namespace psynth {
@@ -10,6 +13,9 @@ public:
 	LFO(float delay, float frequency, float sampleRate);
 
 	AudioData operator()(uint32_t length) const;
-}
+};
 
 }
+
+
+#endif
