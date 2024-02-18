@@ -8,7 +8,7 @@ LFO::LFO(float delay, float frequency, float sampleRate) {
 	halfPeriodFrames = sampleRate / delay / 4 * 2;
 };
 
-AudioData operator()(uint32_t length) const {
+AudioData LFO::operator()(uint32_t length) const {
 	AudioData env(1, length);
 	uint32_t curPos = 0;
 	if(length < delayFrames) {
