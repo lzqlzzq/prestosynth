@@ -1,5 +1,5 @@
 #include "prestosynth/lfo.h"
-#include "util/math_util.h"
+#include "prestosynth/util/math_util.h"
 
 namespace psynth {
 
