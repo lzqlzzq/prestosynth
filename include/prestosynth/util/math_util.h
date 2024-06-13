@@ -74,6 +74,10 @@ constexpr float cent_to_tune(float cent) {
     return gcem::pow(2.f, cent / 1200.f);
 };
 
+inline Eigen::ArrayXXf cent_to_tune(Eigen::ArrayXXf cent) {
+    return pow(2, cent / 1200.f);
+};
+
 constexpr float abscent_to_hz(float absCent) {
     return 8.176f * gcem::pow(2.f, absCent / 1200.f);
 };

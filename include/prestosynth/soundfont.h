@@ -43,9 +43,6 @@ struct SampleAttribute {
 
     float tune = 1.f;
 
-    float filterFc = abscent_to_hz(13500.f);
-    float filterQ = 1.f;
-
     float delayVol = timecents_to_s(-12000);
     float attackVol = timecents_to_s(-12000);
     float holdVol = timecents_to_s(-12000);
@@ -59,6 +56,16 @@ struct SampleAttribute {
     float decayMod = timecents_to_s(-12000);
     float sustainMod = 1.f;
     float releaseMod = timecents_to_s(-12000);
+
+    float delayModLfo = timecents_to_s(-12000);
+    float freqModLfo = 0.f;
+
+    float initFilterFc = abscent_to_hz(13500.f);
+    float filterQ = 1.f;
+    int32_t modLfoToFilterFc = timecents_to_s(0.f);
+    int32_t modEnvToFilterFc = timecents_to_s(0.f);
+
+    float modLfoToVolume = 0.f;
 };
 
 struct SampleInfo {

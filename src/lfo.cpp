@@ -5,7 +5,7 @@ namespace psynth {
 
 LFO::LFO(float delay, float frequency, float sampleRate) {
 	delayFrames = s_to_frames(delay, sampleRate);
-	halfPeriodFrames = sampleRate / delay / 4 * 2;
+	halfPeriodFrames = sampleRate / frequency / 4 * 2;
 };
 
 AudioData LFO::operator()(uint32_t length) const {
@@ -27,22 +27,22 @@ AudioData LFO::operator()(uint32_t length) const {
 	env.middleCols(curPos, halfPeriodFrames / 2).row(0) = Eigen::ArrayXf::LinSpaced(halfPeriodFrames / 2, 0.f, 1.f);
 	curPos += halfPeriodFrames / 2;
 
-	bool edge = false;
+	bool risingEdge = false;
 	while(curPos + halfPeriodFrames <= length) {
-		if(edge)
+		if(risingEdge)
 			env.middleCols(curPos, halfPeriodFrames).row(0) = Eigen::ArrayXf::LinSpaced(halfPeriodFrames, -1.f, 1.f);
 		else
 			env.middleCols(curPos, halfPeriodFrames).row(0) = Eigen::ArrayXf::LinSpaced(halfPeriodFrames, 1.f, -1.f);
 		
-		edge = !edge;
+		risingEdge = !risingEdge;
 		curPos += halfPeriodFrames;
 	}
 
-	uint32_t remainFrames = length - (curPos + halfPeriodFrames);
-	if(edge)
-		env.middleCols(curPos, remainFrames).row(0) = Eigen::ArrayXf::LinSpaced(remainFrames, -1.f, static_cast<float>(remainFrames / halfPeriodFrames) * 2.f - 1.f);
+	uint32_t remainFrames = length - curPos;
+	if(risingEdge)
+		env.rightCols(remainFrames).row(0) = Eigen::ArrayXf::LinSpaced(remainFrames, -1.f, static_cast<float>(remainFrames / halfPeriodFrames) * 2.f - 1.f);
 	else
-		env.middleCols(curPos, remainFrames).row(0) = Eigen::ArrayXf::LinSpaced(remainFrames, 1.f - static_cast<float>(remainFrames / halfPeriodFrames) * 2.f, -1.f);
+		env.rightCols(remainFrames).row(0) = Eigen::ArrayXf::LinSpaced(remainFrames, 1.f - static_cast<float>(remainFrames / halfPeriodFrames) * 2.f, -1.f);
 
 	return env;
 };

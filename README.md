@@ -20,11 +20,9 @@ As the rapid progress of symbolic music generation, there is a growing need of f
 - [x] Envelope Generator
 - [x] Gain Amplifier
 - [x] Low Pass Filter
+- [x] Conditioning volume with LFO, MOD
+- [x] Conditioning LPF with LFO, MOD
 # TODO
 - [ ] Conditioning pitch bend with LFO, MOD
-- [ ] Conditioning volume with LFO, MOD
-- [ ] Conditioning LPF with LFO, MOD
-- [ ] Correct Release caculation
 - [ ] Basic Reverb effect
 - [ ] Basic Chrous effect
-- [ ] Reorganize parallel paradigm
