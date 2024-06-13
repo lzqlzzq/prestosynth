@@ -4,6 +4,7 @@
 #include <iostream>
 #include "prestosynth/soundfont.h"
 #include "prestosynth/envelope.h"
+#include "prestosynth/lfo.h"
 #include "prestosynth/filter.h"
 #include "prestosynth/util/math_util.h"
 
@@ -44,9 +45,6 @@ inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, 
 
             cent_to_tune(std::clamp(static_cast<float>(smplInfo.pitchCorrection + instInfo[FineTune].sAmount) + static_cast<float>(instInfo[CoarseTune].sAmount) * 100.f, -120.f, 120.f)),
 
-            std::clamp(abscent_to_hz(instInfo[InitialFilterFc].sAmount), 20.f, 40000.f),
-            std::clamp(cb_to_amplitude(instInfo[InitialFilterQ].sAmount), cb_to_amplitude(0.f), cb_to_amplitude(960.f)),
-
             std::clamp(timecents_to_s(instInfo[DelayVolEnv].sAmount), 0.001f, 20.f),
             std::clamp(timecents_to_s(instInfo[AttackVolEnv].sAmount), 0.001f, 100.f),
             std::clamp(timecents_to_s(instInfo[HoldVolEnv].sAmount), 0.001f, 20.f),
@@ -60,6 +58,16 @@ inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, 
             std::clamp(timecents_to_s(instInfo[DecayModEnv].sAmount), 0.001f, 100.f),
             std::clamp(1.f - static_cast<float>(instInfo[SustainModEnv].sAmount) / 1000.f, 0.f, 1.f),
             std::clamp(timecents_to_s(instInfo[ReleaseModEnv].sAmount), 0.001f, 100.f),
+
+            std::clamp(timecents_to_s(instInfo[DelayModLFO].sAmount), 0.001f, 20.f),
+            std::clamp(abscent_to_hz(instInfo[FreqModLFO].sAmount), 0.001f, 100.f),
+
+            std::clamp(abscent_to_hz(instInfo[InitialFilterFc].sAmount), 20.f, 40000.f),
+            std::clamp(cb_to_amplitude(instInfo[InitialFilterQ].sAmount), cb_to_amplitude(0.f), cb_to_amplitude(960.f)),
+            std::clamp(static_cast<int>(instInfo[ModLfoToFilterFc].sAmount), -12000, 12000),
+            std::clamp(static_cast<int>(instInfo[ModEnvToFilterFc].sAmount), -12000, 12000),
+
+            std::clamp((instInfo[ModLfoToVolume].sAmount > 0 ? 1.f : 0.f) * cb_to_amplitude(std::abs(instInfo[ModLfoToVolume].sAmount)), 0.f, cb_to_amplitude(960.f)),
         }
     });
 }
@@ -257,6 +265,11 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &attr, uint8
         attr.releaseVol,
         sampleRate,
         durationFrames);
+
+    // Process loop
+    AudioData sample = loop(rawSample, velEnv.noteDurationFrames);
+
+    // Build modulator envolope and LFO curve
     Envelope modEnv(
         attr.loopMode,
         attr.delayMod,
@@ -266,22 +279,28 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &attr, uint8
         attr.sustainMod,
         attr.releaseMod,
         sampleRate,
-        durationFrames);
+        sample.cols());
+    LFO modLFO(
+        attr.delayModLfo,
+        attr.freqModLfo,
+        sampleRate);
+    AudioData modLFOCurve = modLFO(sample.cols());
+    AudioData modEnvCurve = modEnv(sample.cols());
+    modLFOCurve.rightCols(velEnv.releaseFrames) = 0.f;
+
+    // TODO: Process Oscillator
+
+    // Process LPF
     LowPassFilter filter(
-        attr.filterFc,
         attr.filterQ,
         sampleRate);
+    filter.process(sample,
+        attr.initFilterFc * cent_to_tune(modLFOCurve * attr.modLfoToFilterFc) + \
+            modEnvCurve * attr.modEnvToFilterFc
+        );
 
-    uint32_t noteDurationFrames = velEnv.noteDurationFrames;
-
-    // Processing loop
-    AudioData sample = loop(rawSample, noteDurationFrames);
-
-    // Processing LPF
-    filter.process(sample);
-
-    // Processing volume envelope
-    sample.row(0) *= velEnv(sample.cols());
+    // Process volume envelope
+    sample.row(0) *= velEnv(sample.cols()) + attr.modLfoToVolume * modLFOCurve;
 
     return sample;
 };

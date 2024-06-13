@@ -2,21 +2,25 @@
 #define _FILTER_H
 
 #include "util/audio_util.h"
-#include "util/convolve.h"
 #include "soundfont.h"
 
 namespace psynth {
 
+#ifndef M_PI
+#define M_PI  3.14159265358979323846264f  // from CRC
+#endif
+#define SQRT2 1.4142135623730950488
+
 class LowPassFilter {
 private:
-	bool active = false;
-    float ax[3];
-    float by[3];
-public:
-	void set_params(float filterFc, float filterQ, float sampleRate);
-	LowPassFilter(float filterFc, float filterQ, float sampleRate);
+	float filterQ;
+	float sampleRate;
 
-	void process(AudioData &sample) const;
+public:
+	LowPassFilter(float filterQ, float sampleRate);
+
+	AudioData eval_params(const AudioData &freqCurve) const;
+	void process(AudioData &sample, const AudioData &freqCurve) const;
 };
 
 }

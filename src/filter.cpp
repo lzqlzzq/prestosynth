@@ -4,66 +4,51 @@
 
 namespace psynth {
 
-#ifndef M_PI
-#define M_PI  3.14159265358979323846264f  // from CRC
-#endif
-#define SQRT2 1.4142135623730950488
-
-void LowPassFilter::set_params(float filterFc, float filterQ, float sampleRate) {
-    if(filterFc >= abscent_to_hz(13499.f))
-        return ;
-
-    active = true;
-
-    float q = filterQ - (1.f - 1.f / SQRT2) / (1 + 6 * (filterQ - 1));
-
-    float omega = 2 * M_PI * filterFc / sampleRate;
-    float cosVal = std::cos(omega);
-    float alpha = std::sin(omega) / (2.f * q);
-
-    float a0 = 1.f + alpha;
-    float a1 = -2.f * cosVal;
-    float a2 = 1.f - alpha;
-    float b1 = 1.f - cosVal;
-    float b0 = b1 / 2.f;
-    float b2 = b1 / 2.f;
-
-    by[1] = a1 / a0;
-    by[2] = a2 / a0;
-    ax[0] = b0 / a0;
-    ax[1] = b1 / a0;
-    ax[2] = b2 / a0;
-}
-
 // Following https://github.com/cycfi/q/blob/develop/q_lib/include/q/fx/biquad.hpp#L72
-LowPassFilter::LowPassFilter(float filterFc, float filterQ, float sampleRate) {
-    set_params(filterFc, filterQ, sampleRate);
+AudioData LowPassFilter::eval_params(const AudioData &freqCurve) const {
+	AudioData paramCurve(5, freqCurve.cols()); // (ax0, ax-1, ax-2, by0, by-1)
+
+	AudioData omega = 2 * M_PI * freqCurve / sampleRate;
+	AudioData cosVal = omega.cos();
+	AudioData alpha = omega.sin() / (2.f * filterQ);
+
+	AudioData a0 = 1.f + alpha;
+	AudioData a1 = -2.f * cosVal;
+	AudioData a2 = 1.f - alpha;
+	AudioData b1 = 1.f - cosVal;
+	AudioData b0 = b1 / 2.f;
+	AudioData b2 = b1 / 2.f;
+
+	paramCurve.row(2) = b0 / a0;
+	paramCurve.row(1) = b1 / a0;
+	paramCurve.row(0) = b2 / a0;
+	paramCurve.row(4) = -a1 / a0;
+	paramCurve.row(3) = -a2 / a0;
+
+	return paramCurve;
 };
 
-void LowPassFilter::process(AudioData &sample) const {
-    // TODO: Using Eigen expressions to optimize
-    if(!active)
-        return ;
-
-    float xv[3];
-    float yv[3];
-
-    for(int r = 0; r < sample.rows(); r++)
-    {
-       for(int c = 0; c < sample.cols(); c++)
-       {
-           xv[2] = xv[1]; xv[1] = xv[0];
-           xv[0] = sample(r, c);
-           yv[2] = yv[1]; yv[1] = yv[0];
-
-           yv[0] =   (ax[0] * xv[0] + ax[1] * xv[1] + ax[2] * xv[2]
-                        - by[1] * yv[0]
-                        - by[2] * yv[1]);
-
-           sample(r, c) = yv[0];
-       }
-    }
+LowPassFilter::LowPassFilter(float filterQ, float sampleRate) {
+	this->filterQ = filterQ - (1.f - 1.f / SQRT2) / (1 + 6 * (filterQ - 1));
+	this->sampleRate = sampleRate;
 };
-    
+
+void LowPassFilter::process(AudioData &sample, const AudioData &freqCurve) const {
+	AudioData buffer(1, 5);
+	const AudioData paramCurve = eval_params(freqCurve);
+
+	for(int c = 3; c < sample.cols(); c++)
+	{
+		buffer.leftCols(2) = buffer.middleCols(1, 2);
+		buffer.col(2) = sample.col(c);
+
+		if(freqCurve(0, c) < 13499.f) {
+			sample.col(c) = (paramCurve.col(c).transpose() * buffer).sum();
+		}
+
+		buffer.col(3) = buffer.col(4);
+		buffer.col(4) = sample.col(c);
+	}
+};
 
 }
