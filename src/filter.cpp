@@ -12,12 +12,12 @@ AudioData LowPassFilter::eval_params(const AudioData &freqCurve) const {
 	AudioData cosVal = omega.cos();
 	AudioData alpha = omega.sin() / (2.f * filterQ);
 
-	AudioData a0 = 1.f + alpha;
-	AudioData a1 = -2.f * cosVal;
-	AudioData a2 = 1.f - alpha;
-	AudioData b1 = 1.f - cosVal;
-	AudioData b0 = b1 / 2.f;
-	AudioData b2 = b1 / 2.f;
+	auto a0 = 1.f + alpha;
+	auto a1 = -2.f * cosVal;
+	auto a2 = 1.f - alpha;
+	auto b1 = 1.f - cosVal;
+	auto b0 = b1 / 2.f;
+	auto b2 = b1 / 2.f;
 
 	paramCurve.row(2) = b0 / a0;
 	paramCurve.row(1) = b1 / a0;
@@ -34,20 +34,42 @@ LowPassFilter::LowPassFilter(float filterQ, float sampleRate) {
 };
 
 void LowPassFilter::process(AudioData &sample, const AudioData &freqCurve) const {
-	AudioData buffer(1, 5);
-	const AudioData paramCurve = eval_params(freqCurve);
+	// AudioData buffer(1, 5);
+	float buffer[5] = {0, 0, 0, 0, 0};
+	// const AudioData paramCurve = eval_params(freqCurve);
+	const auto omega_weight = 2 * M_PI / sampleRate;
+	const auto alpha_weight = 1 / (2.f * filterQ);
+	auto * data = sample.data();
 
-	for(int c = 3; c < sample.cols(); c++)
-	{
-		buffer.leftCols(2) = buffer.middleCols(1, 2);
-		buffer.col(2) = sample.col(c);
+	auto eval_sample = [omega_weight, alpha_weight, buffer](const float freq) {
+		const auto omega = omega_weight * freq;
+		const auto cosVal = std::cos(omega);
+		const auto alpha = alpha_weight * std::sin(omega);
+		const auto a0 = 1.f + alpha;
+		const auto a1 = -2.f * cosVal;
+		const auto a2 = 1.f - alpha;
+		const auto b1 = 1.f - cosVal;
+		const auto b0 = b1 / 2.f;
+		const auto b2 = b0;
 
-		if(freqCurve(0, c) < 13499.f) {
-			sample.col(c) = (paramCurve.col(c).transpose() * buffer).sum();
+		auto sum = b2 * buffer[0];
+		sum += b1 * buffer[1];
+		sum += b0 * buffer[2];
+		sum += -a2 * buffer[3];
+		sum += -a1  * buffer[4];
+		return sum / a0;
+	};
+
+	for(int c = 3; c < sample.cols(); c++) {
+		float *cur = data + c;
+		buffer[0] = buffer[1];
+		buffer[1] = buffer[2];
+		buffer[2] = *cur;
+		if(const float freq = *(freqCurve.data() + c); freq < 13499.f) {
+			*cur = eval_sample(freq);
 		}
-
-		buffer.col(3) = buffer.col(4);
-		buffer.col(4) = sample.col(c);
+		buffer[3] = buffer[4];
+		buffer[4] = *cur;
 	}
 };
 

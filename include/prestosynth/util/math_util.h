@@ -9,15 +9,15 @@
 namespace psynth {
 
 constexpr float timecents_to_ms(int16_t timecent) {
-    return gcem::pow(2.f, static_cast<float>(timecent) / 1200.f) * 1000.f;
+    return std::pow(2.f, static_cast<float>(timecent) / 1200.f) * 1000.f;
 };
 
 constexpr float timecents_to_s(int16_t timecent) {
-    return gcem::pow(2.f, static_cast<float>(timecent) / 1200.f);
+    return std::pow(2.f, static_cast<float>(timecent) / 1200.f);
 };
 
 constexpr int16_t s_to_timecents(float second) {
-    return 1200 * gcem::log2(second);
+    return 1200 * std::log2(second);
 };
 
 constexpr float db_to_amplitude(float db) {
@@ -25,19 +25,19 @@ constexpr float db_to_amplitude(float db) {
 };
 
 constexpr float cb_to_amplitude(float cb) {
-    return gcem::pow(10.f, cb / 200.f);
+    return std::pow(10.f, cb / 200.f);
 };
 
 constexpr float amplitude_to_cb(float amp) {
-    return 200 * gcem::log10(amp);
+    return 200 * std::log10(amp);
 };
 
 constexpr float amplitude_to_db(float amp) {
-    return 20 * gcem::log10(amp);
+    return 20 * std::log10(amp);
 };
 
 constexpr uint32_t s_to_frames(float second, float sampleRate) {
-    return gcem::ceil(second * sampleRate);
+    return std::ceil(second * sampleRate);
 };
 
 constexpr float LOG_EPS = db_to_amplitude(-144.f);
@@ -67,19 +67,20 @@ constexpr float pitch_to_hz(uint8_t pitch) {
 };
 
 constexpr float semitone_to_tune(float semitones) {
-    return gcem::pow(2.f, semitones / 12.f);
+    return std::pow(2.f, semitones / 12.f);
 };
 
 constexpr float cent_to_tune(float cent) {
-    return gcem::pow(2.f, cent / 1200.f);
+    return std::pow(2.f, cent / 1200.f);
 };
 
-inline Eigen::ArrayXXf cent_to_tune(Eigen::ArrayXXf cent) {
-    return pow(2, cent / 1200.f);
+template<typename T>
+auto cent_to_tune(T cent) {
+    return Eigen::pow(2, cent / 1200.f);
 };
 
 constexpr float abscent_to_hz(float absCent) {
-    return 8.176f * gcem::pow(2.f, absCent / 1200.f);
+    return 8.176f * std::pow(2.f, absCent / 1200.f);
 };
 
 }
