@@ -46,6 +46,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 
 	add_executable(render ${CMAKE_CURRENT_SOURCE_DIR}/example/render.cpp)
 	target_link_libraries(render PRIVATE prestosynth)
+	target_compile_features(render PRIVATE cxx_std_17)
 
 	# Tests
 	add_executable(test_conv ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_conv.cpp)
