@@ -92,7 +92,7 @@ release:
     uint32_t originalReleaseFrames = releaseFrames;
 
     if(releaseLevel && releaseLevel < 1.f) {
-        releaseFrames *= -gcem::log10(-(releaseLevel - 1.f)) / 4.f;
+        releaseFrames *= -std::log10(-(releaseLevel - 1.f)) / 4.f;
         noteDurationFrames -= originalReleaseFrames - releaseFrames;
     }
 };
