@@ -61,8 +61,11 @@ AudioData Synthesizer::render_single_thread(const Track &track, bool stereo) {
             noteAudio *=  volume;
 
         for(uint32_t startFrame : pack.second) {
-            if(startFrame + noteAudio.cols() > trackAudio.cols())
+            if(startFrame + noteAudio.cols() > trackAudio.cols()) {
+                uint32_t currCols = trackAudio.cols();
                 trackAudio.conservativeResize(Eigen::NoChange, startFrame + noteAudio.cols());
+                trackAudio.rightCols(startFrame + noteAudio.cols() - currCols) = 0.;
+            }
 
             trackAudio.middleCols(startFrame, noteAudio.cols()) += noteAudio;
         }

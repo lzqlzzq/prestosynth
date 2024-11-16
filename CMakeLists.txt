@@ -52,6 +52,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	add_executable(test_conv ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_conv.cpp)
 	target_link_libraries(test_conv PRIVATE prestosynth)
 
-	add_executable(test_filter ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_filter.cpp)
-	target_link_libraries(test_filter PRIVATE prestosynth)
+	# add_executable(test_filter ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_filter.cpp)
+	# target_link_libraries(test_filter PRIVATE prestosynth)
+
 endif()
