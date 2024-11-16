@@ -291,6 +291,7 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &attr, uint8
     // TODO: Process Oscillator
 
     // Process LPF
+    /*
     LowPassFilter filter(
         attr.filterQ,
         sampleRate);
@@ -298,6 +299,7 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &attr, uint8
         attr.initFilterFc * cent_to_tune(modLFOCurve * attr.modLfoToFilterFc) + \
             modEnvCurve * attr.modEnvToFilterFc
         );
+    */
 
     // Process volume envelope
     sample.row(0) *= velEnv(sample.cols()) + attr.modLfoToVolume * modLFOCurve;
