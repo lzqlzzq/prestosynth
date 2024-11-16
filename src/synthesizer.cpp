@@ -122,8 +122,11 @@ AudioData Synthesizer::render_multi_thread(const Track &track, bool stereo) {
 
         AudioData &noteAudio = pack.audio;
         for(uint32_t startFrame : pack.startPack) {
-            if(startFrame + noteAudio.cols() > trackAudio.cols())
+            if(startFrame + noteAudio.cols() > trackAudio.cols()) {
+                const uint32_t currCols = trackAudio.cols();
                 trackAudio.conservativeResize(Eigen::NoChange, startFrame + noteAudio.cols());
+                trackAudio.rightCols(startFrame + noteAudio.cols() - currCols) = 0.;
+            }
 
             trackAudio.middleCols(startFrame, noteAudio.cols()) += noteAudio;
         }
@@ -211,8 +214,11 @@ AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stere
                 noteAudio *=  volume;
 
             for(uint32_t startFrame : pack.second) {
-                if(startFrame + noteAudio.cols() > master.cols())
+                if(startFrame + noteAudio.cols() > master.cols()) {
+                    const uint32_t currCols = master.cols();
                     master.conservativeResize(Eigen::NoChange, startFrame + noteAudio.cols());
+                    master.rightCols(startFrame + noteAudio.cols() - currCols) = 0.;
+                }
 
                 master.middleCols(startFrame, noteAudio.cols()) += noteAudio;
             }
