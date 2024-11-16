@@ -105,6 +105,7 @@ release:
 
 AudioData Envelope::operator()(const uint32_t length) const {
     AudioData envelope(1, length);
+    envelope.setZero();
     uint32_t remainFrames = length;
     // Length must be greater than 0.
     assert(length > 0);

@@ -13,6 +13,7 @@ LFO::LFO(const float delay, const float frequency, const float sampleRate) {
 
 AudioData LFO::operator()(const uint32_t length) const {
 	AudioData env(1, length);
+	env.setZero();
 
 	// 1. Delay
 	//    env[:delayFrames] = 0
