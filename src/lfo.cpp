@@ -1,5 +1,6 @@
 #include "prestosynth/lfo.h"
 #include "prestosynth/util/math_util.h"
+#include <cassert>
 
 namespace psynth {
 
@@ -69,7 +70,9 @@ AudioData LFO::operator()(const uint32_t length) const {
 	if (curPos == length) {
 		return env;
 	}
-	assert(curPos < length, "curPos should be less than length at this point");
+
+	// curPos should be less than length at this point
+	assert(curPos < length);
 
 	const uint32_t remainFrames = length - curPos;
 	if(risingEdge) {

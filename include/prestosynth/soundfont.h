@@ -101,12 +101,12 @@ private:
 
     const SampleInfoPack get_sample_info(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity) const;
     const Sample get_raw_sample(const SampleAttribute &sampleAttr, uint8_t pitch);
-    const AudioData build_sample(const SampleAttribute &sampleAttr, uint8_t pitch, uint8_t velocity, uint32_t durationFrames);
+    AudioData build_sample(const SampleAttribute &sampleAttr, uint8_t pitch, uint8_t velocity, uint32_t durationFrames);
 
 public:
     PrestoSoundFont(const std::string &filepath, uint32_t sampleRate, uint8_t quality);
 
-    const AudioData build_note(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity, uint32_t durationFrames, bool stereo);
+    AudioData build_note(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity, uint32_t durationFrames, bool stereo);
 };
 
 }

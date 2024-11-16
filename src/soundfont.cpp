@@ -252,10 +252,13 @@ inline AudioData loop(const Sample &rawSample, uint32_t noteDurationFrames) {
     return sample;
 }
 
-const AudioData PrestoSoundFont::build_sample(const SampleAttribute &attr, uint8_t pitch, uint8_t velocity, uint32_t durationFrames) {
+AudioData PrestoSoundFont::build_sample(
+    const SampleAttribute &attr, uint8_t pitch,
+    uint8_t velocity, uint32_t durationFrames) {
+
     const Sample &rawSample = get_raw_sample(attr, pitch);
 
-    Envelope velEnv(
+    const Envelope velEnv(
         attr.loopMode,
         attr.delayVol,
         attr.attackVol,
@@ -263,14 +266,15 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &attr, uint8
         attr.decayVol,
         attr.sustainVol,
         attr.releaseVol,
-        sampleRate,
-        durationFrames);
+        static_cast<float>(sampleRate),
+        durationFrames
+    );
 
     // Process loop
     AudioData sample = loop(rawSample, velEnv.noteDurationFrames);
 
-    // Build modulator envolope and LFO curve
-    Envelope modEnv(
+    // Build modulator envelope and LFO curve
+    const Envelope modEnv(
         attr.loopMode,
         attr.delayMod,
         attr.attackMod,
@@ -278,26 +282,33 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &attr, uint8
         attr.decayMod,
         attr.sustainMod,
         attr.releaseMod,
-        sampleRate,
-        sample.cols());
-    LFO modLFO(
+        static_cast<float>(sampleRate),
+        sample.cols()
+    );
+    const LFO modLFO(
         attr.delayModLfo,
         attr.freqModLfo,
-        sampleRate);
+        static_cast<float>(sampleRate)
+    );
     AudioData modLFOCurve = modLFO(sample.cols());
-    AudioData modEnvCurve = modEnv(sample.cols());
-    modLFOCurve.rightCols(velEnv.releaseFrames) = 0.f;
+    const AudioData modEnvCurve = modEnv(sample.cols());
+    modLFOCurve.rightCols(
+        std::min(velEnv.releaseFrames, static_cast<uint32_t>(modLFOCurve.cols()))
+    ) = 0.f;
 
     // TODO: Process Oscillator
 
     // Process LPF
-    LowPassFilter filter(
+    const LowPassFilter filter(
         attr.filterQ,
-        sampleRate);
-    filter.process(sample,
+        static_cast<float>(sampleRate)
+    );
+
+    filter.process(
+        sample,
         attr.initFilterFc * cent_to_tune(modLFOCurve * attr.modLfoToFilterFc) + \
-            modEnvCurve * attr.modEnvToFilterFc
-        );
+        modEnvCurve * attr.modEnvToFilterFc
+    );
 
     // Process volume envelope
     sample.row(0) *= velEnv(sample.cols()) + attr.modLfoToVolume * modLFOCurve;
@@ -305,7 +316,9 @@ const AudioData PrestoSoundFont::build_sample(const SampleAttribute &attr, uint8
     return sample;
 };
 
-const AudioData PrestoSoundFont::build_note(uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity, uint32_t durationFrames, bool stereo) {
+AudioData PrestoSoundFont::build_note(
+    uint8_t preset, uint8_t bank, uint8_t pitch, uint8_t velocity,
+    uint32_t durationFrames, bool stereo) {
     const SampleInfoPack sampleInfos = get_sample_info(preset, bank, pitch, velocity);
 
     uint32_t maxFrames = 0;

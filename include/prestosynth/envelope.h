@@ -9,7 +9,7 @@ namespace psynth {
 class Envelope {
 public:
     uint32_t noteDurationFrames;
-    uint32_t durationFrames;
+    // uint32_t durationFrames;
 
     uint32_t delayFrames = 0;
 
