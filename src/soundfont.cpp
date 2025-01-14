@@ -274,41 +274,41 @@ AudioData PrestoSoundFont::build_sample(
     AudioData sample = loop(rawSample, velEnv.noteDurationFrames);
 
     // Build modulator envelope and LFO curve
-    const Envelope modEnv(
-        attr.loopMode,
-        attr.delayMod,
-        attr.attackMod,
-        attr.holdMod,
-        attr.decayMod,
-        attr.sustainMod,
-        attr.releaseMod,
-        static_cast<float>(sampleRate),
-        sample.cols()
-    );
+    // const Envelope modEnv(
+    //     attr.loopMode,
+    //     attr.delayMod,
+    //     attr.attackMod,
+    //     attr.holdMod,
+    //     attr.decayMod,
+    //     attr.sustainMod,
+    //     attr.releaseMod,
+    //     static_cast<float>(sampleRate),
+    //     sample.cols()
+    // );
     const LFO modLFO(
         attr.delayModLfo,
         attr.freqModLfo,
         static_cast<float>(sampleRate)
     );
     AudioData modLFOCurve = modLFO(sample.cols());
-    const AudioData modEnvCurve = modEnv(sample.cols());
-    modLFOCurve.rightCols(
-        std::min(velEnv.releaseFrames, static_cast<uint32_t>(modLFOCurve.cols()))
-    ) = 0.f;
+    // const AudioData modEnvCurve = modEnv(sample.cols());
+    // modLFOCurve.rightCols(
+    //     std::min(velEnv.releaseFrames, static_cast<uint32_t>(modLFOCurve.cols()))
+    // ) = 0.f;
 
     // TODO: Process Oscillator
 
     // Process LPF
-    const LowPassFilter filter(
-        attr.filterQ,
-        static_cast<float>(sampleRate)
-    );
+    // const LowPassFilter filter(
+    //     attr.filterQ,
+    //     static_cast<float>(sampleRate)
+    // );
 
-    filter.process(
-        sample,
-        attr.initFilterFc * cent_to_tune(modLFOCurve * attr.modLfoToFilterFc) + \
-        modEnvCurve * attr.modEnvToFilterFc
-    );
+    // filter.process(
+    //     sample,
+    //     attr.initFilterFc * cent_to_tune(modLFOCurve * attr.modLfoToFilterFc) + \
+    //     modEnvCurve * attr.modEnvToFilterFc
+    // );
 
     // Process volume envelope
     sample.row(0) *= velEnv(sample.cols()) + attr.modLfoToVolume * modLFOCurve;

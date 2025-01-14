@@ -12,7 +12,7 @@ option(BUILD_TESTING "Avoid libsamplerate to build test." OFF)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/mio)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/libsamplerate)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/MPMCQueue)
+#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/MPMCQueue)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/eigen)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/gcem)
 
@@ -25,12 +25,13 @@ endforeach()
 add_library(prestosynth ${prestosynth_src})
 add_library(prestosynth::prestosynth ALIAS prestosynth)
 
-target_compile_features(prestosynth PRIVATE cxx_std_17)
+target_compile_features(prestosynth PUBLIC cxx_std_17)
+# force mio to use C++17, to make it compiled on macOS
 target_include_directories(prestosynth PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(prestosynth mio)
 target_link_libraries(prestosynth samplerate)
 target_link_libraries(prestosynth eigen)
-target_link_libraries(prestosynth MPMCQueue)
+#target_link_libraries(prestosynth MPMCQueue)
 target_link_libraries(prestosynth gcem)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)

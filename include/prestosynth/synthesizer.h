@@ -3,7 +3,7 @@
 
 #include <map>
 #include <vector>
-#include <rigtorp/MPMCQueue.h>
+// #include <rigtorp/MPMCQueue.h>
 #include "prestosynth/sequence.h"
 #include "prestosynth/soundfont.h"
 #include "prestosynth/util/audio_util.h"
@@ -26,15 +26,15 @@ struct PackedNote {
 };
 
 typedef std::map<NoteHead, NoteStartPack> NoteMap;
-typedef rigtorp::mpmc::Queue<PackedNote> PackedNoteQueue;
+// typedef rigtorp::mpmc::Queue<PackedNote> PackedNoteQueue;
 
 struct NoteAudioPack {
     AudioData audio;
     NoteStartPack startPack;
 };
 
-typedef rigtorp::mpmc::Queue<NoteAudioPack> NoteAudioQueue;
-typedef rigtorp::mpmc::Queue<AudioData> AudioQueue;
+// typedef rigtorp::mpmc::Queue<NoteAudioPack> NoteAudioQueue;
+// typedef rigtorp::mpmc::Queue<AudioData> AudioQueue;
 
 class Synthesizer {
 private:
