@@ -1,5 +1,5 @@
 #include "prestosynth/envelope.h"
-
+#include <cassert>
 #include <Eigen/Core>
 
 namespace psynth {
