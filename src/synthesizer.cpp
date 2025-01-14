@@ -229,9 +229,9 @@ AudioData Synthesizer::render_single_thread(const Sequence &sequence, bool stere
 };
 
 AudioData Synthesizer::render(const Sequence &sequence, bool stereo) {
-    if(sequence.tracks.size() > 1 && workerNum > 1)
-        return render_multi_thread(sequence, stereo);
-    else
+    // if(sequence.tracks.size() > 1 && workerNum > 1)
+    //     return render_multi_thread(sequence, stereo);
+    // else
         return render_single_thread(sequence, stereo);
 };
 
