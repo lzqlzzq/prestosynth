@@ -60,12 +60,17 @@ struct SampleAttribute {
     float delayModLfo = timecents_to_s(-12000);
     float freqModLfo = 0.f;
 
+    // Vibrato LFO parameters
+    float delayVibLfo = timecents_to_s(-12000);
+    float freqVibLfo = 0.f;
+
     float initFilterFc = abscent_to_hz(13500.f);
     float filterQ = 1.f;
     int32_t modLfoToFilterFc = timecents_to_s(0.f);
     int32_t modEnvToFilterFc = timecents_to_s(0.f);
 
     float modLfoToVolume = 0.f;
+    float vibLfoToPitch = 0.f; // In cents
 };
 
 struct SampleInfo {

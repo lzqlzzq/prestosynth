@@ -1,201 +1,176 @@
 #include "prestosynth/envelope.h"
+#include "prestosynth/util/math_util.h"
 #include <cassert>
-#include <Eigen/Core>
+#include <cmath>
+#include <algorithm>
 
 namespace psynth {
 
-Envelope::Envelope(
-    const sf_internal::LoopMode loopMode,
-    const float delay,
-    const float attack,
-    const float hold,
-    const float decayvol,
-    const float sustain,
-    const float release,
-    const float sampleRate,
-    uint32_t durationFrames) {
-    using sf_internal::LoopMode;
-
-    if((loopMode == LoopMode::NoLoop | loopMode == LoopMode::Unused) & (sustain != 0.f)) {
-        const uint32_t ahFrames = s_to_frames(delay + attack + hold, sampleRate) + 1;
-        durationFrames = std::min(durationFrames, ahFrames);
+// Helper to calculate exponential decay/release rate (multiplier per sample)
+// TargetRatio is the desired endpoint relative to the start (e.g., 0.001 for -60dB)
+float Envelope::calculateRate(float timeSeconds, float targetRatio, float sampleRate) {
+    if (timeSeconds <= 0.0f) {
+        // Instantaneous change - rate effectively makes it reach target in one sample
+        return targetRatio;
     }
-
-    releaseFrames = s_to_frames(release, sampleRate);
-    noteDurationFrames = durationFrames + releaseFrames;
-
-    uint32_t remainFrames = durationFrames;
-    uint32_t curPosition = 0;
-
-    // cutoff delay by 0.001s according to the standard
-    delayFrames = delay <= 0.001 ? 0 : s_to_frames(delay, sampleRate);
-    if(remainFrames <= delayFrames) {
-        delayFrames = remainFrames;
-        attackStart = curPosition + remainFrames;
-        goto release;
+    uint32_t totalSamples = static_cast<uint32_t>(timeSeconds * sampleRate);
+    if (totalSamples == 0) {
+         return targetRatio; // Avoid division by zero or log(1)
     }
+    // rate ^ totalSamples = targetRatio
+    // rate = targetRatio ^ (1 / totalSamples)
+    // Using exp(log(targetRatio) / totalSamples) is numerically more stable
+    return std::exp(std::log(targetRatio) / totalSamples);
+}
 
-    remainFrames -= delayFrames;
-    curPosition += delayFrames;
+// Basic timecents to seconds conversion (ignoring key/vel scaling for now)
+// static float timecentsToSeconds(float timecents) {
+//     if (timecents <= -32768) return 0.0f; // SF2 convention for minimum time
+//     return std::pow(2.0f, timecents / 1200.0f);
+// }
 
-    attackStart = curPosition;
-    // cutoff attack by 0.001s according to the standard
-    attackFrames = attack <= 0.001 ? 0 :s_to_frames(attack, sampleRate);
-    if(remainFrames <= attackFrames) {
-        releaseLevel = static_cast<float>(remainFrames) / static_cast<float>(attackFrames);
-        holdLevel = releaseLevel;
-        attackFrames = remainFrames;
-        holdStart = curPosition + remainFrames;
+Envelope::Envelope(float sampleRate) : sampleRate(sampleRate) {
+    configure(0, 0, 0, 0, 1.0f, 0); // Default: instant on, full sustain, instant off
+}
 
-        goto release;
+void Envelope::configure(
+    float delaySeconds,
+    float attackSeconds,
+    float holdSeconds,
+    float decaySeconds,
+    float sustainLinear, // Already 0-1
+    float releaseSeconds,
+    int keyNum,
+    int velocity
+) {
+    // TODO: Apply key/velocity scaling to times based on SF2 generators
+    // (e.g., keynumToVolEnvHold, velToVolEnvAttack etc.)
+
+    // Clamp times to be non-negative
+    delaySeconds = std::max(0.0f, delaySeconds);
+    attackSeconds = std::max(0.0f, attackSeconds);
+    holdSeconds = std::max(0.0f, holdSeconds);
+    decaySeconds = std::max(0.0f, decaySeconds);
+    releaseSeconds = std::max(0.0f, releaseSeconds);
+
+    this->delaySamples = static_cast<uint32_t>(delaySeconds * sampleRate);
+    this->holdSamples = static_cast<uint32_t>(holdSeconds * sampleRate);
+
+    // Attack: Linear rise to ATTACK_TARGET (slightly > 1.0)
+    uint32_t attackSamples = static_cast<uint32_t>(attackSeconds * sampleRate);
+    this->attackRate = (attackSamples == 0) ? ATTACK_TARGET : (ATTACK_TARGET / static_cast<float>(attackSamples));
+
+    // Decay: Exponential decay from 1.0 towards sustain level
+    // We calculate the rate needed to reach TARGET_RATIO from 1.0 in decaySeconds
+    this->decayRate = calculateRate(decaySeconds, TARGET_RATIO, sampleRate);
+
+    // Sustain: Level (0 to 1)
+    this->sustainLevel = std::clamp(sustainLinear, 0.0f, 1.0f);
+
+    // Release: Exponential decay from current level towards 0 (TARGET_RATIO)
+    this->releaseRate = calculateRate(releaseSeconds, TARGET_RATIO, sampleRate);
+
+    // Initialize state
+    start();
+}
+
+void Envelope::start() {
+    currentStage = Stage::Delay;
+    currentValue = 0.0f;
+    samplesInStage = 0;
+    releaseStartLevel = 0.0f; // Not relevant yet
+}
+
+void Envelope::release() {
+    if (currentStage != Stage::Done) {
+        currentStage = Stage::Release;
+        samplesInStage = 0;
+        releaseStartLevel = currentValue; // Capture level at release point
     }
+}
 
-    remainFrames -= attackFrames;
-    curPosition += attackFrames;
+// Implement generateCurve
+AudioData Envelope::generateCurve(uint32_t length) {
+    AudioData curve(1, length);
+    float* out = curve.data();
 
-    holdStart = curPosition;
-    holdFrames = hold <= 0.001 ? 0 : s_to_frames(hold, sampleRate);
-    if(remainFrames <= holdFrames) {
-        releaseLevel = 1.f;
-        // holdLevel = 1.f by default
-        holdFrames = remainFrames;
-        decayStart = curPosition + remainFrames;
+    // Reset state for generation
+    start(); // Use the start method to reset stage, value, etc.
 
-        goto release;
-    }
+    for (uint32_t i = 0; i < length; ++i) {
+        // Simulate the state machine progression for one sample
+        switch (currentStage) {
+            case Stage::Delay:
+                currentValue = 0.0f;
+                samplesInStage++;
+                if (samplesInStage >= delaySamples) {
+                    currentStage = Stage::Attack;
+                    samplesInStage = 0;
+                    currentValue = 0.0f; // Start attack from 0
+                }
+                break;
 
-    remainFrames -= holdFrames;
-    curPosition += holdFrames;
+            case Stage::Attack:
+                currentValue += attackRate;
+                samplesInStage++;
+                if (currentValue >= 1.0f) {
+                    currentValue = 1.0f;
+                    currentStage = Stage::Hold;
+                    samplesInStage = 0;
+                }
+                break;
 
-    decayStart = curPosition;
-    decayFrames = delay <= 0.001 ? 0 : s_to_frames(decayvol, sampleRate);
-    if(remainFrames <= decayFrames) {
-        releaseLevel = 1.f - static_cast<float>(remainFrames) / static_cast<float>(decayFrames);
-        sustainLevel = releaseLevel;
-        decayFrames = remainFrames;
-        sustainStart = curPosition + remainFrames;
+            case Stage::Hold:
+                currentValue = 1.0f;
+                samplesInStage++;
+                if (samplesInStage >= holdSamples) {
+                    currentStage = Stage::Decay;
+                    samplesInStage = 0;
+                }
+                break;
 
-        goto release;
-    }
+            case Stage::Decay:
+                currentValue *= decayRate;
+                samplesInStage++;
+                if (currentValue <= sustainLevel) {
+                    currentValue = sustainLevel;
+                    currentStage = Stage::Sustain;
+                    samplesInStage = 0;
+                }
+                break;
 
-    remainFrames -= decayFrames;
-    curPosition += decayFrames;
+            case Stage::Sustain:
+                // If we reach sustain in offline mode, it usually means the note
+                // wasn't 'released'. We hold the sustain level indefinitely
+                // until the requested length runs out.
+                // The 'release' stage is typically triggered externally for offline synths
+                // based on note duration, which isn't directly handled here.
+                // For simplicity, hold sustain till the end.
+                // A more accurate offline model might need a separate release trigger point.
+                currentValue = sustainLevel;
+                break;
 
-    releaseLevel = sustainLevel;
-    sustainStart = curPosition;
-    sustainFrames = remainFrames;
+            case Stage::Release:
+                // This stage might not be reached naturally in a simple generateCurve
+                // unless release() was called *before* generateCurve, which is unusual.
+                // Handle it defensively.
+                currentValue *= releaseRate;
+                if (currentValue <= TARGET_RATIO) {
+                    currentValue = 0.0f;
+                    currentStage = Stage::Done;
+                }
+                break;
 
-release:
-    releaseStart = curPosition + remainFrames;
-
-    // Sustain Penalty
-    // Following https://github.com/schellingb/TinySoundFont/blob/master/tsf.h#L1057
-    const uint32_t originalReleaseFrames = releaseFrames;
-
-    if(releaseLevel > 0 & releaseLevel < 1.f) {
-        const float scaleFactor = -std::log10(-(releaseLevel - 1.f)) / 4.f;
-        // Scale factor must be greater than or equal to 0.
-        assert(scaleFactor >= 0);
-        releaseFrames = static_cast<uint32_t>(std::floor(
-            static_cast<float>(releaseFrames) * scaleFactor
-        ));
-        noteDurationFrames -= originalReleaseFrames - releaseFrames;
-    }
-};
-
-AudioData Envelope::operator()(const uint32_t length) const {
-    AudioData envelope(1, length);
-    envelope.setZero();
-    uint32_t remainFrames = length;
-    // Length must be greater than 0.
-    assert(length > 0);
-
-    // Delay
-    if(this->delayFrames > 0 & remainFrames > 0) {
-        // Decay end position is not equal to attack start position.
-        assert(this->decayFrames == this->attackStart);
-        if(remainFrames <= this->delayFrames) {
-            envelope.leftCols(remainFrames) = 0;
-            return envelope;
-        } else {
-            envelope.leftCols(this->attackStart) = 0;
+            case Stage::Done:
+                currentValue = 0.0f;
+                break;
         }
+        out[i] = currentValue;
     }
-    remainFrames -= this->delayFrames;
-
-    // Attack
-    if(this->attackFrames > 0 & remainFrames > 0) {
-        if(remainFrames <= this->attackFrames) {
-            envelope.middleCols(this->attackStart, remainFrames).row(0) = Eigen::ArrayXf::LinSpaced(
-                remainFrames, 0,
-                this->holdLevel * (static_cast<float>(remainFrames) / static_cast<float>(this->attackFrames))
-            );
-            return envelope;
-        } else {
-            envelope.middleCols(this->attackStart, this->attackFrames).row(0) = Eigen::ArrayXf::LinSpaced(
-                this->attackFrames, 0, this->holdLevel
-            );
-        }
-    }
-    remainFrames -= this->attackFrames;
-
-    // Hold
-    if(this->holdFrames > 0 & remainFrames > 0) {
-        if(remainFrames <= this->holdFrames) {
-            envelope.middleCols(this->holdStart, remainFrames).row(0) = this->holdLevel;
-            return envelope;
-        } else {
-            envelope.middleCols(this->holdStart, this->holdFrames).row(0) = this->holdLevel;
-        }
-    }
-    remainFrames -= this->holdFrames;
-
-    // Decay
-    // "Hold level is less than sustain level."
-    assert(this->holdLevel >= this->sustainLevel);
-
-    if(this->decayFrames > 0 & remainFrames > 0) {
-        if(remainFrames <= this->decayFrames)  {
-            const auto fillRate = static_cast<float>(remainFrames) / static_cast<float>(this->decayFrames);
-            envelope.middleCols(this->decayStart, remainFrames).row(0) = Eigen::ArrayXf::LinSpaced(
-                remainFrames, this->holdLevel,
-                this->holdLevel - (this->holdLevel - this->sustainLevel) * fillRate
-            );
-            return envelope;
-        } else {
-            envelope.middleCols(this->decayStart, this->decayFrames).row(0) = Eigen::ArrayXf::LinSpaced(
-                this->decayFrames, this->holdLevel, this->sustainLevel
-            );
-        }
-    }
-    remainFrames -= this->decayFrames;
-
-    // Sustain
-    if(this->sustainFrames > 0 & remainFrames > 0) {
-        if(remainFrames <= this->sustainFrames) {
-            envelope.middleCols(this->sustainStart, remainFrames) = sustainLevel;
-            return envelope;
-        } else {
-            envelope.middleCols(this->sustainStart, this->sustainFrames) = sustainLevel;
-        }
-    }
-    remainFrames -= this->sustainFrames;
-
-    // Release
-    if(this->releaseFrames > 0 & remainFrames > 0) {
-        if(remainFrames <= this->releaseFrames) {
-            const float fillRate = static_cast<float>(remainFrames) / static_cast<float>(this->releaseFrames);
-            envelope.rightCols(remainFrames).row(0) = Eigen::ArrayXf::LinSpaced(
-                this->releaseFrames, this->releaseLevel, this->releaseLevel * (1 - fillRate)
-            );
-        }
-        else {
-            envelope.rightCols(this->releaseFrames).row(0) = Eigen::ArrayXf::LinSpaced(
-                this->releaseFrames, this->releaseLevel, 0.f
-            );
-        }
-    }
-    return envelope;
-};
+    // Note: The 'release' part of the ADSR is implicitly handled by the total 'length'
+    // requested, or needs an external trigger mechanism in an offline context.
+    // This function generates the curve up to 'length' based on Attack, Decay, Sustain.
+    return curve;
+}
 
 }

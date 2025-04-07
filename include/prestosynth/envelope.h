@@ -1,48 +1,90 @@
 #ifndef ENVELOPE_H
 #define ENVELOPE_H
 
-#include "prestosynth/soundfont.h"
+#include "prestosynth/soundfont_internal.h"
 #include "prestosynth/util/audio_util.h"
+#include <cmath>
+#include <cstdint>
 
 namespace psynth {
 
+// Forward declaration if necessary
+// class Synthesizer; // Assuming sample rate comes from a synth context
+
 class Envelope {
 public:
-    uint32_t noteDurationFrames;
-    // uint32_t durationFrames;
+    enum class Stage {
+        Delay,
+        Attack,
+        Hold,
+        Decay,
+        Sustain,
+        Release,
+        Done
+    };
 
-    uint32_t delayFrames = 0;
+private:
+    // Parameters (converted from timecents/seconds to rates/levels)
+    float sampleRate;
+    float attackRate;   // Rate of increase per sample (1.0 / attack_samples)
+    float decayRate;    // Multiplier per sample for exponential decay
+    float releaseRate;  // Multiplier per sample for exponential release
+    float sustainLevel; // Level (0.0 to 1.0)
+    uint32_t delaySamples;
+    uint32_t holdSamples;
 
-    uint32_t attackStart;
-    uint32_t attackFrames = 0;
+    // State
+    Stage currentStage = Stage::Delay;
+    float currentValue = 0.0f;
+    uint32_t samplesInStage = 0;
+    float releaseStartLevel = 0.0f; // Level when release phase begins
 
-    uint32_t holdStart;
-    uint32_t holdFrames = 0;
-    float holdLevel = 1.;
+    // Constants for exponential decay calculation (similar to meltysynth)
+    static constexpr float TARGET_RATIO = 0.001f; // Target level for decay/release (close to zero)
+    static constexpr float ATTACK_TARGET = 1.0f + TARGET_RATIO; // Slightly above 1 for attack overshoot avoidance
+    static constexpr float DECAY_TARGET = TARGET_RATIO; // Target for decay
 
-    uint32_t decayStart;
-    uint32_t decayFrames = 0;
+    // Helper to convert timecents to samples
+    static uint32_t timecentsToSamples(float timecents, float sampleRate);
+    // Helper to calculate exponential rate
+    static float calculateRate(float timeSeconds, float targetRatio, float sampleRate);
 
-    uint32_t sustainStart;
-    uint32_t sustainFrames = 0;
-    float sustainLevel = 1.;
+public:
+    Envelope(float sampleRate);
 
-    uint32_t releaseStart;
-    uint32_t releaseFrames = 0;
-    float releaseLevel = 0.f;
+    // Configure the envelope based on SoundFont parameters (times in seconds)
+    void configure(
+        float delaySeconds,   // volEnvDelay
+        float attackSeconds,  // volEnvAttack
+        float holdSeconds,    // volEnvHold
+        float decaySeconds,   // volEnvDecay
+        float sustainLevel,   // volEnvSustain (0-1 linear, from 0-1000 tenths of %)
+        float releaseSeconds, // volEnvRelease
+        int keyNum = 60,      // For potential key->time scaling (not implemented yet)
+        int velocity = 100    // For potential velocity->time scaling (not implemented yet)
+    );
 
-    Envelope(
-        sf_internal::LoopMode loopMode,
-        float delay,
-        float attack,
-        float hold,
-        float decayvol,
-        float sustain,
-        float release,
-        float sampleRate,
-        uint32_t durationFrames);
+    // Trigger the start of the envelope (when noteOn occurs)
+    void start();
 
-    AudioData operator()(uint32_t length) const;
+    // Trigger the release phase (when noteOff occurs)
+    void release();
+
+    // Process the envelope for a block of samples,
+    // writing the envelope value into the output buffer.
+    void process(AudioData& outputBuffer, uint32_t numSamples);
+
+    // Get the current envelope value
+    float getValue() const { return currentValue; }
+
+    // Check if the envelope has finished (Stage::Done)
+    bool isFinished() const { return currentStage == Stage::Done; }
+
+    // Get the current stage
+    Stage getStage() const { return currentStage; }
+
+    // Generate the envelope curve for a given length
+    AudioData generateCurve(uint32_t length);
 };
 
 }
