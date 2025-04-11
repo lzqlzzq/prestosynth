@@ -1,4 +1,11 @@
 #include <algorithm>
+#include <cmath>
+// 补充hz_to_cents实现（全局可见）
+// C++17以下自定义clamp
+template <typename T>
+constexpr const T& clamp(const T& v, const T& lo, const T& hi) {
+    return (v < lo) ? lo : (hi < v) ? hi : v;
+}
 
 #include <chrono>
 #include <iostream>
@@ -10,6 +17,13 @@
 
 namespace psynth {
 
+// 补充hz_to_cents实现（psynth作用域内）
+inline float hz_to_cents(float hz) { return 1200.f * std::log2(hz / 8.176f); }
+
+} // namespace psynth
+
+namespace psynth {
+
 // Function to convert SF2 timecents to seconds (using std::pow)
 inline float timecents_to_s_corrected(int16_t tc) {
     // SF2 spec: -32768 indicates 0 time
@@ -17,7 +31,7 @@ inline float timecents_to_s_corrected(int16_t tc) {
     // Clamp to reasonable min/max to avoid extreme values from pow
     // Min: -12000 (approx 0.001s), Max: 8000 (approx 17s for decay/release), 5000 (approx 2.8s for hold/delay)
     // We can apply more specific clamps in Envelope::configure later.
-    float clamped_tc = std::clamp(static_cast<float>(tc), -12000.f, 8000.f);
+    float clamped_tc = clamp(static_cast<float>(tc), -12000.f, 8000.f);
     return std::pow(2.f, clamped_tc / 1200.f);
 }
 
@@ -25,7 +39,7 @@ inline float timecents_to_s_corrected(int16_t tc) {
 inline float abscents_to_hz_corrected(int16_t ac) {
     // 13500 cents is often treated as the max (~20kHz)
     // Min practical frequency is ~8.176 Hz (MIDI note 0)
-    float clamped_ac = std::clamp(static_cast<float>(ac), 0.f, 13500.f);
+    float clamped_ac = clamp(static_cast<float>(ac), 0.f, 13500.f);
     return 8.176f * std::pow(2.f, clamped_ac / 1200.f);
 }
 
@@ -95,7 +109,7 @@ inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, 
         static_cast<uint32_t>(std::max(0, static_cast<int>(smplInfo.startLoop) + startLoopAddrOfs)),
         static_cast<uint32_t>(std::max(0, static_cast<int>(smplInfo.endLoop) + endLoopAddrOfs)),
 
-        std::clamp(static_cast<float>(instInfo[Pan].sAmount) / 1000.f, -0.5f, 0.5f),
+        clamp(static_cast<float>(instInfo[Pan].sAmount) / 1000.f, -0.5f, 0.5f),
         std::pow(10.f, -static_cast<float>(instInfo[InitialAttenuation].sAmount) / 200.f),
 
         static_cast<float>(instInfo[FineTune].sAmount + smplInfo.pitchCorrection) + static_cast<float>(instInfo[CoarseTune].sAmount) * 100.f,
@@ -122,8 +136,8 @@ inline void PrestoSoundFont::handle_smpl(sf_internal::GeneratorPack presetInfo, 
 
         abscents_to_hz_corrected(instInfo[InitialFilterFc].sAmount),
         cb_to_linear_q_gain(instInfo[InitialFilterQ].sAmount),
-        static_cast<float>(instInfo[ModLfoToFilterFc].sAmount),
-        static_cast<float>(instInfo[ModEnvToFilterFc].sAmount),
+        static_cast<int32_t>(instInfo[ModLfoToFilterFc].sAmount),
+        static_cast<int32_t>(instInfo[ModEnvToFilterFc].sAmount),
 
         mod_lfo_to_volume_gain(instInfo[ModLfoToVolume].sAmount),
         static_cast<float>(instInfo[VibLfoToPitch].sAmount)
@@ -200,7 +214,7 @@ inline void PrestoSoundFont::handle_phdr() {
 };
 
 PrestoSoundFont::PrestoSoundFont(const std::string &filepath, uint32_t sampleRate, uint8_t quality):
-    sf(sf_internal::SoundFont(filepath)), sampleRate(sampleRate), quality(quality) {
+    sf(filepath), sampleRate(sampleRate), quality(quality) {
     handle_phdr();
 };
 
@@ -273,7 +287,7 @@ const Sample PrestoSoundFont::get_raw_sample(const SampleAttribute &sampleAttr, 
         rawSample.attr.endLoop = rawSample.audio.cols() > 0 ? rawSample.audio.cols() - 1 : 0; // Corrected potential off-by-one
     }
      if (rawSample.attr.startLoop >= rawSample.attr.endLoop) {
-        rawSample.attr.loopMode = LoopMode::NoLoop;
+        rawSample.attr.loopMode = sf_internal::LoopMode::NoLoop;
         rawSample.attr.startLoop = 0;
         rawSample.attr.endLoop = 0;
     }
@@ -465,7 +479,7 @@ AudioData PrestoSoundFont::build_sample(
         float combinedFcCents = psynth::hz_to_cents(baseFc) +
                                 (i < modEnvCurve.cols() ? modEnvCurve(i) : 0.f) * attr.modEnvToFilterFc +
                                 (i < modLFOCurve.cols() ? modLFOCurve(i) : 0.f) * attr.modLfoToFilterFc;
-        freqCurveHz(i) = psynth::cents_to_hz(std::max(0.f, combinedFcCents));
+        freqCurveHz(i) = abscent_to_hz(std::max(0.f, combinedFcCents));
     }
 
     // 7. Process Low-Pass Filter
@@ -538,8 +552,8 @@ AudioData PrestoSoundFont::build_note(
         float gainR = 0.5f + pan;
 
         if(stereo) {
-            gainL = std::clamp(gainL, 0.f, 1.f);
-            gainR = std::clamp(gainR, 0.f, 1.f);
+            gainL = clamp(gainL, 0.f, 1.f);
+            gainR = clamp(gainR, 0.f, 1.f);
             outputSample.row(0).leftCols(sample.cols()) += sample.row(0) * gainL * 2.f;
             outputSample.row(1).leftCols(sample.cols()) += sample.row(0) * gainR * 2.f;
         } else {
