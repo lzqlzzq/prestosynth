@@ -3,10 +3,10 @@
 	url = https://github.com/vimpunk/mio.git
 [submodule "3rdparty/libsamplerate"]
 	path = 3rdparty/libsamplerate
-	url = https://github.com/libsndfile/libsamplerate.git
+	url = https://github.com/Yikai-Liao/libsamplerate.git
 [submodule "3rdparty/eigen"]
 	path = 3rdparty/eigen
 	url = https://gitlab.com/libeigen/eigen.git
 [submodule "3rdparty/gcem"]
 	path = 3rdparty/gcem
-	url = https://github.com/kthohr/gcem.git
+	url = https://github.com/Yikai-Liao/gcem.git
